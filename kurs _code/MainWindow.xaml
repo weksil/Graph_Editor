@@ -1,0 +1,59 @@
+﻿<Window x:Class="Kurs.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Kurs"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525"
+        Keyboard.KeyUp="Window_KeyUp"
+        Keyboard.KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <ItemsPanelTemplate x:Key="cnv">
+            <Canvas/>
+        </ItemsPanelTemplate>
+
+    </Window.Resources>
+    <Grid>
+        <TextBlock x:Name="tbtest" />
+        <ItemsControl ItemsSource="{Binding Edges}" ItemsPanel="{StaticResource cnv}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Line X1="{Binding A.Pos.X}" Y1="{Binding A.Pos.Y}"
+                    X2="{Binding B.Pos.X}" Y2="{Binding B.Pos.Y}"
+                    Stroke="Green" StrokeThickness="2"/>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <ItemsControl ItemsSource="{Binding Nodes}" ItemsPanel="{StaticResource cnv}"
+                  Background="#1FFF"
+                  MouseDown="ItemsControl_MouseDown">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border BorderBrush="Blue" BorderThickness="2" CornerRadius="10"
+                  Background="#DDF" 
+                  MouseDown="Border_MouseDown"
+                  MouseMove="Border_MouseMove"
+                  MouseUp="Border_MouseUp"
+                  >
+                        <Border.BitmapEffect>
+                            <DropShadowBitmapEffect Opacity="{Binding SelectedOpacity}" />
+                        </Border.BitmapEffect>
+                        <Grid>
+                            <TextBlock Text="{Binding Text}" Margin="5" Visibility="Visible"/>
+                            <TextBox Text="{Binding Text}" Margin="5" Visibility="Hidden" Keyboard.KeyDown="TextBox_KeyDown"/>
+                        </Grid>
+                        <Border.RenderTransform>
+                            <TransformGroup>
+                                <TranslateTransform X="-40" Y="-20"/>
+                                <TranslateTransform X="{Binding Pos.X}" Y="{Binding Pos.Y}"/>
+                            </TransformGroup>
+                        </Border.RenderTransform>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+    </Grid>
+</Window>

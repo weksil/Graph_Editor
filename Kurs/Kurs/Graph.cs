@@ -11,7 +11,7 @@ namespace Kurs
     {
         public ObservableCollection<Node> Nodes { get; }
         public ObservableCollection<Edge> Edges { get; }
-        private int NodesCount { get; set; }
+        private int NodesCount ;
 
         private List<BaseCommand> History;
         private int historyStep;

@@ -4,16 +4,29 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
+using System.Xml.Serialization;
+using System.IO;
 
 namespace Kurs
 {
-    class Graph
+    [Serializable()]
+    public class Graph
     {
         public ObservableCollection<Node> Nodes { get; }
         public ObservableCollection<Edge> Edges { get; }
-        private int NodesCount ;
+        [field: NonSerialized]
+        private Dictionary<int, Node> nodesId = new Dictionary<int, Node>();
+        [field: NonSerialized]
+        private Dictionary<int, Edge> edgesId = new Dictionary<int, Edge>();
+        private int NodesCount;
+        private int EdgesCount;
 
+        private string fileName = "Graph.xml";
+        private string filePath = @"Saves/";
+
+        [field: NonSerialized()]
         private List<BaseCommand> History;
+        [field: NonSerialized()]
         private int historyStep;
 
         public Graph()
@@ -22,6 +35,7 @@ namespace Kurs
             Edges = new ObservableCollection<Edge>();
             History = new List<BaseCommand>();
             NodesCount = 0;
+            EdgesCount = 0;
         }
         public void Undo()
         {
@@ -69,9 +83,9 @@ namespace Kurs
         }
         public void ConnectNodes(Node node1, Node node2)
         {
-            if (node1.Path.ContainsKey(node2))
+            if (node1.Path.ContainsKey(node2.ID))
             {
-                UnconnectNodes(node1,node2);
+                UnconnectNodes(node1, node2);
                 return;
             }
             NewOperation();
@@ -86,33 +100,62 @@ namespace Kurs
             com.Execute();
             History.Add(com);
         }
+        public void Save()
+        {
+            if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
+            Stream sw = File.Create(filePath + fileName);
+            XmlSerializer ser = new XmlSerializer(this.GetType());
+            ser.Serialize(sw, this);
+            sw.Close();
+        }
+        public void Load()
+        {
+            if (Directory.Exists(filePath))
+                if (File.Exists(filePath + fileName))
+                {
+                    Stream sw = File.OpenRead(filePath + fileName);
+                    XmlSerializer ser = new XmlSerializer(this.GetType());
+                    var tmp = ser.Deserialize(sw) as Graph;
+                    sw.Close();
+                    var t = tmp.Edges;
+                }
+        }
 
         #region Logic
         public void CreateEdge(Node a, Node b)
         {
-            var res = Edge.Create(a, b);
+            var res = Edge.Create(a, b, EdgesCount);
             Edges.Add(res);
-            a.Path.Add(b, res);
-            b.Path.Add(a, res);
+            edgesId.Add(res.ID,res);
+            a.Path.Add(b.ID, res.ID);
+            b.Path.Add(a.ID, res.ID);
+            EdgesCount++;
         }
         public void CreateNode(Point pos)
         {
-            Nodes.Add(Node.Create(pos, NodesCount));
+            Node tmp = Node.Create(pos, NodesCount);
+            Nodes.Add(tmp);
+            nodesId.Add(tmp.ID,tmp);
             NodesCount++;
         }
         public void CreateNode(Node node)
         {
             Nodes.Add(node);
+            nodesId.Add(node.ID,node);
             node.Text += "_del";
             foreach (var item in node.Path)
             {
-                item.Key.Path.Add(node, item.Value);
-                Edges.Add(item.Value);
+
+                nodesId[item.Key].Path.Add(node.ID, item.Value);
+                Edges.Add(edgesId[item.Value]);
             }
+            NodesCount++;
         }
         public void CreateNode(Point pos, string text)
         {
-            Nodes.Add(Node.Create(pos, text, NodesCount));
+            Node tmp = Node.Create(pos, text, NodesCount);
+            Nodes.Add(tmp);
+            nodesId.Add(tmp.ID, tmp);
             NodesCount++;
         }
         /// <summary>
@@ -121,8 +164,8 @@ namespace Kurs
         /// <returns></returns>
         public Edge FindEdge(Node node1, Node node2)
         {
-            if (node1.Path.ContainsKey(node2))
-                return node1.Path[node2];
+            if (node1.Path.ContainsKey(node2.ID))
+                return edgesId[node1.Path[node2.ID]];
             return null;
         }
         public void DeleteNode(Node node)
@@ -130,28 +173,34 @@ namespace Kurs
             Nodes.Remove(node);
             foreach (var item in node.Path)
             {
-                item.Key.Path.Remove(node);
-                Edges.Remove(item.Value);
+                nodesId[item.Key].Path.Remove(node.ID);
+                Edges.Remove(edgesId[item.Value]);
             }
+            nodesId.Remove(node.ID);
             NodesCount--;
         }
         public void DeleteEdge(Node node1, Node node2)
         {
             Edge edge = FindEdge(node1, node2);
             if (edge == null)
-                return; 
-            edge.A.Path.Remove(edge.B);
-            edge.B.Path.Remove(edge.A);
+                return;
+            edge.A.Path.Remove(edge.B.ID);
+            edge.B.Path.Remove(edge.A.ID);
             Edges.Remove(edge);
+            edgesId.Remove(edge.ID);
+            EdgesCount--;
         }
         #endregion
     }
-    class Node : INotifyPropertyChanged
+    [Serializable()]
+    public class Node : INotifyPropertyChanged
     {
-        public string Text { get; set; }
-        public Dictionary<Node, Edge> Path;
-        Point pos;
         public int ID { get; set; }
+        public string Text { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+        public SerializableDictionary<int, int> Path;
+        private Point pos;
+        private bool selected;
         public void Rename(string name)
         {
             Text = name;
@@ -169,26 +218,11 @@ namespace Kurs
                 }
             }
         }
-
-        bool selected;
         public bool Selected { get { return selected; } }
         public double SelectedOpacity
         {
             get { return selected ? 1 : 0; }
         }
-
-        public void Select()
-        {
-            selected = true;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("SelectedOpacity"));
-        }
-
-        public void UnSelect()
-        {
-            selected = false;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("SelectedOpacity"));
-        }
-
         public void InvertSelect()
         {
             selected = !selected;
@@ -200,36 +234,38 @@ namespace Kurs
             Node res = new Node();
             res.pos = position;
             res.Text = text;
-            res.Path = new Dictionary<Node, Edge>();
+            res.Path = new SerializableDictionary<int, int>();
             res.ID = id;
             return res;
         }
-
         public static Node Create(Point position, int numb)
         {
             return Create(position, String.Format("Node{0}", numb), numb);
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
     }
-    class Edge
+    [Serializable()]
+    public class Edge
     {
+
+        public Node B { get ; set; }
         public Node A { get; set; }
-        public Node B { get; set; }
+        public int ID { get; set; }
         public int Weight { get; set; }
-        public static Edge Create(Node a, Node b)
+        public static Edge Create(Node a, Node b, int id)
         {
-            return Edge.Create(a,b,1);
+            return Edge.Create(a, b, 1, id);
         }
-        public static Edge Create(Node a , Node b, int weight)
+        public static Edge Create(Node a, Node b, int weight, int id)
         {
             Edge res = new Edge();
             res.A = a;
             res.B = b;
             res.Weight = weight;
+            res.ID = id;
             return res;
         }
     }
+    #region Commands
     interface BaseCommand
     {
         void Execute();
@@ -384,4 +420,7 @@ namespace Kurs
             _graph.DeleteEdge(_node1, _node2);
         }
     }
+    #endregion
+
+
 }

@@ -200,6 +200,7 @@ namespace Kurs
         public event PropertyChangedEventHandler PropertyChanged;
         public SerializableDictionary<int, int> Path;
         private Point pos;
+        [field: NonSerialized()]
         private bool selected;
         public void Rename(string name)
         {
@@ -246,9 +247,13 @@ namespace Kurs
     [Serializable()]
     public class Edge
     {
-
-        public Node B { get ; set; }
-        public Node A { get; set; }
+        
+        public Node B { get { return b; } }
+        [field: NonSerialized()]
+        private Node a;
+        [field: NonSerialized()]
+        private Node b;
+        public Node A { get { return a; } }
         public int ID { get; set; }
         public int Weight { get; set; }
         public static Edge Create(Node a, Node b, int id)
@@ -258,8 +263,8 @@ namespace Kurs
         public static Edge Create(Node a, Node b, int weight, int id)
         {
             Edge res = new Edge();
-            res.A = a;
-            res.B = b;
+            res.a = a;
+            res.b = b;
             res.Weight = weight;
             res.ID = id;
             return res;
@@ -421,6 +426,4 @@ namespace Kurs
         }
     }
     #endregion
-
-
 }

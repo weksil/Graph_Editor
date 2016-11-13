@@ -6,17 +6,17 @@ using System.Linq;
 using System.Windows;
 using System.Xml.Serialization;
 using System.IO;
+using System.Xml;
+using System.Xml.Schema;
 
 namespace Kurs
 {
     [Serializable()]
-    public class Graph
+    public class Graph: IXmlSerializable, INotifyPropertyChanged
     {
-        public ObservableCollection<Node> Nodes { get; }
         public ObservableCollection<Edge> Edges { get; }
-        [field: NonSerialized]
+        public ObservableCollection<Node> Nodes { get; }
         private Dictionary<int, Node> nodesId = new Dictionary<int, Node>();
-        [field: NonSerialized]
         private Dictionary<int, Edge> edgesId = new Dictionary<int, Edge>();
         private int NodesCount;
         private int EdgesCount;
@@ -24,18 +24,19 @@ namespace Kurs
         private string fileName = "Graph.xml";
         private string filePath = @"Saves/";
 
-        [field: NonSerialized()]
         private List<BaseCommand> History;
-        [field: NonSerialized()]
         private int historyStep;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public Graph()
         {
             Nodes = new ObservableCollection<Node>();
             Edges = new ObservableCollection<Edge>();
             History = new List<BaseCommand>();
+            /*
             NodesCount = 0;
-            EdgesCount = 0;
+            EdgesCount = 0;*/
         }
         public void Undo()
         {
@@ -108,23 +109,34 @@ namespace Kurs
             ser.Serialize(sw, this);
             sw.Close();
         }
-        public void Load()
+         public Graph Load(string path, string name)
         {
-            if (Directory.Exists(filePath))
-                if (File.Exists(filePath + fileName))
+            
+            if (Directory.Exists(path))
+                if (File.Exists(path + name))
                 {
-                    Stream sw = File.OpenRead(filePath + fileName);
+                    Stream sw = File.OpenRead(path + name);
                     XmlSerializer ser = new XmlSerializer(this.GetType());
-                    var tmp = ser.Deserialize(sw) as Graph;
+                    var res = ser.Deserialize(sw) as Graph;
                     sw.Close();
-                    var t = tmp.Edges;
+                    return res;
                 }
+            return null;
         }
+
+        public Graph Load()
+        {
+
+            return Load(filePath, fileName);
+        }
+
+
 
         #region Logic
         public void CreateEdge(Node a, Node b)
         {
             var res = Edge.Create(a, b, EdgesCount);
+            res.SetParent(this);
             Edges.Add(res);
             edgesId.Add(res.ID,res);
             a.Path.Add(b.ID, res.ID);
@@ -190,10 +202,79 @@ namespace Kurs
             edgesId.Remove(edge.ID);
             EdgesCount--;
         }
+
+        public Node Find(int id)
+        {
+            return nodesId[id];
+        }
+        #endregion
+        
+        #region Serialization
+
+        public XmlSchema GetSchema()
+        {
+            return null;
+        }
+
+        public void ReadXml(XmlReader reader)
+        {
+            if (reader.IsEmptyElement) return;
+            reader.Read();
+            var ser_Edges = new XmlSerializer(typeof(Edge));
+            var ser_Nodes = new XmlSerializer(typeof(Node));
+            Edge cur_Edge = null;
+            Node cur_Node = null;
+
+            EdgesCount = reader.ReadElementContentAsInt();
+            NodesCount = reader.ReadElementContentAsInt();
+
+
+            reader.ReadStartElement();
+            while(reader.NodeType != XmlNodeType.EndElement)
+            {
+                cur_Edge = ser_Edges.Deserialize(reader) as Edge;
+                Edges.Add(cur_Edge);
+                edgesId.Add(cur_Edge.ID, cur_Edge);
+                cur_Edge.SetParent(this);
+                reader.MoveToContent();
+            }
+            reader.ReadEndElement();
+            reader.ReadStartElement();
+            while (reader.NodeType != XmlNodeType.EndElement)
+            {
+                cur_Node = ser_Nodes.Deserialize(reader) as Node;
+                Nodes.Add(cur_Node);
+                nodesId.Add(cur_Node.ID, cur_Node);
+                foreach (var item in cur_Node.Path)
+                {
+                    edgesId[item.Value].Connect(cur_Node.ID, item.Key);
+                }
+                reader.MoveToContent();
+            }
+            reader.ReadEndElement();
+
+        }
+
+        public void WriteXml(XmlWriter writer)
+        {
+            writer.WriteStartElement(nameof(EdgesCount));
+            writer.WriteValue(EdgesCount);
+            writer.WriteEndElement();
+
+            writer.WriteStartElement(nameof(NodesCount));
+            writer.WriteValue(NodesCount);
+            writer.WriteEndElement();
+
+            var serEdges = new XmlSerializer(typeof(ObservableCollection<Edge>));
+            serEdges.Serialize(writer, Edges);
+            var serNodes = new XmlSerializer(typeof(ObservableCollection<Node>));
+            serNodes.Serialize(writer, Nodes);
+        }
         #endregion
     }
     [Serializable()]
-    public class Node : INotifyPropertyChanged
+    [XmlRoot(nameof(Node))]
+    public class Node : INotifyPropertyChanged, IXmlSerializable
     {
         public int ID { get; set; }
         public string Text { get; set; }
@@ -205,7 +286,7 @@ namespace Kurs
         public void Rename(string name)
         {
             Text = name;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Text"));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Text)));
         }
         public Point Pos
         {
@@ -215,7 +296,7 @@ namespace Kurs
                 if (pos != value)
                 {
                     pos = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Pos"));
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(pos)));
                 }
             }
         }
@@ -227,7 +308,7 @@ namespace Kurs
         public void InvertSelect()
         {
             selected = !selected;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("SelectedOpacity"));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedOpacity)));
         }
 
         public static Node Create(Point position, string text, int id)
@@ -243,17 +324,75 @@ namespace Kurs
         {
             return Create(position, String.Format("Node{0}", numb), numb);
         }
+
+        public XmlSchema GetSchema()
+        {
+            return null;
+        }
+
+        public void ReadXml(XmlReader reader)
+        {
+            if (reader.IsEmptyElement) return;
+            reader.Read();
+            var pathSerializer = new XmlSerializer(typeof(Entry[]));
+            reader.ReadStartElement();
+            reader.ReadStartElement();
+            Path = SerializableDictionary<int,int>.Create( pathSerializer.Deserialize(reader) as Entry[] );
+            reader.ReadEndElement();
+            reader.ReadEndElement();
+
+            ID = reader.ReadElementContentAsInt();
+
+            Text = reader.ReadElementContentAsString();
+
+            reader.ReadStartElement();
+            var x = reader.ReadElementContentAsDouble();
+            var y = reader.ReadElementContentAsDouble();
+            Pos = new Point( x , y);
+            reader.ReadEndElement();
+            reader.ReadEndElement();
+        }
+
+        public void WriteXml(XmlWriter writer)
+        {
+            
+            writer.WriteStartElement(nameof(Path));
+            var ser = new XmlSerializer(typeof(SerializableDictionary<int, int>));
+            ser.Serialize(writer, Path);
+            writer.WriteEndElement();
+
+            writer.WriteStartElement(nameof(ID));
+            writer.WriteValue(ID);
+            writer.WriteEndElement();
+
+            writer.WriteStartElement(nameof(Text));
+            writer.WriteValue(Text);
+            writer.WriteEndElement();
+
+            writer.WriteStartElement(nameof(Pos));
+
+            writer.WriteStartElement(nameof(pos.X));
+            writer.WriteValue(pos.X);
+            writer.WriteEndElement();
+
+            writer.WriteStartElement(nameof(pos.Y));
+            writer.WriteValue(pos.Y);
+            writer.WriteEndElement();
+
+            writer.WriteEndElement();
+        }
     }
     [Serializable()]
     public class Edge
     {
         
-        public Node B { get { return b; } }
+        public Node B { get { return parent.Find( b ); } }
         [field: NonSerialized()]
-        private Node a;
+        private int a;
         [field: NonSerialized()]
-        private Node b;
-        public Node A { get { return a; } }
+        private int b;
+        private Graph parent;
+        public Node A { get { return parent.Find( a ); } }
         public int ID { get; set; }
         public int Weight { get; set; }
         public static Edge Create(Node a, Node b, int id)
@@ -263,11 +402,27 @@ namespace Kurs
         public static Edge Create(Node a, Node b, int weight, int id)
         {
             Edge res = new Edge();
-            res.a = a;
-            res.b = b;
+            res.Connect(a, b);
             res.Weight = weight;
             res.ID = id;
             return res;
+        }
+
+        public void Connect(int A, int B)
+        {
+            if (a == A && b == B || a == B && b == A) return;
+            a = A;
+            b = B;
+        }
+
+        public void Connect(Node A, Node B)
+        {
+            Connect(A.ID, B.ID);
+        }
+
+        public void SetParent(Graph parent)
+        {
+            this.parent = parent;
         }
     }
     #region Commands

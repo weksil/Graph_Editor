@@ -19,10 +19,10 @@ namespace Kurs
         }
         public void ReadXml(XmlReader reader)
         {
-            if (reader.IsEmptyElement) return;
+            if (reader.IsEmptyElement) throw new NullReferenceException();
             XmlSerializer serializer = new XmlSerializer(typeof(List<Entry>));
             List<Entry> list = serializer.Deserialize(reader) as List<Entry>;
-            foreach (var item in list)
+            foreach (var item in entries)
             {
                 this.Add((TKey)item.Key, (TValue)item.Value);
             }
@@ -36,7 +36,17 @@ namespace Kurs
                 entries.Add(Entry.Create(key, this[key]));
             }
             var sr = new XmlSerializer(typeof(List<Entry>));
-            sr.Serialize(writer,entries);
+            sr.Serialize(writer, entries);
+        }
+
+        public static SerializableDictionary<TKey, TValue> Create(Entry[] entries)
+        {
+            var path = new SerializableDictionary<TKey, TValue>();
+            foreach (var item in entries)
+            {
+                path.Add((TKey)item.Key, (TValue)item.Value);
+            }
+            return path;
         }
     }
     public class Entry
@@ -51,5 +61,4 @@ namespace Kurs
             return tmp;
         }
     }
-
 }

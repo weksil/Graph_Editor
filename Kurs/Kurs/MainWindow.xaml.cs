@@ -132,7 +132,7 @@ namespace Kurs
                     CurrMod = Mods[ e.Key ];
             tbtest.Text = CurrMod.ToString(); //test
             if (e.Key == Key.S) graph.Save();
-            if (e.Key == Key.L) graph.Load();
+            if (e.Key == Key.L) Load();
         }
 
         private void TextBox_KeyDown(Object sender , KeyEventArgs e)
@@ -236,6 +236,11 @@ namespace Kurs
 
         #endregion
 
+        void Load()
+        {
+            graph = graph.Load();
+            DataContext = graph;
+        }
         #endregion
 
     }

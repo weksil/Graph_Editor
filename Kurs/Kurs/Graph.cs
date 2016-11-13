@@ -12,7 +12,7 @@ using System.Xml.Schema;
 namespace Kurs
 {
     [Serializable()]
-    public class Graph: IXmlSerializable, INotifyPropertyChanged
+    public class Graph : IXmlSerializable
     {
         public ObservableCollection<Edge> Edges { get; }
         public ObservableCollection<Node> Nodes { get; }
@@ -27,7 +27,6 @@ namespace Kurs
         private List<BaseCommand> History;
         private int historyStep;
 
-        public event PropertyChangedEventHandler PropertyChanged;
 
         public Graph()
         {
@@ -94,6 +93,11 @@ namespace Kurs
             com.Execute();
             History.Add(com);
         }
+
+        public void ConnectNodes(int node1_ID, int node2_ID)
+        {
+            ConnectNodes(nodesId[node1_ID], nodesId[node2_ID]);
+        }
         public void UnconnectNodes(Node node1, Node node2)
         {
             NewOperation();
@@ -109,9 +113,9 @@ namespace Kurs
             ser.Serialize(sw, this);
             sw.Close();
         }
-         public Graph Load(string path, string name)
+        public Graph Load(string path, string name)
         {
-            
+
             if (Directory.Exists(path))
                 if (File.Exists(path + name))
                 {
@@ -138,7 +142,7 @@ namespace Kurs
             var res = Edge.Create(a, b, EdgesCount);
             res.SetParent(this);
             Edges.Add(res);
-            edgesId.Add(res.ID,res);
+            edgesId.Add(res.ID, res);
             a.Path.Add(b.ID, res.ID);
             b.Path.Add(a.ID, res.ID);
             EdgesCount++;
@@ -147,14 +151,13 @@ namespace Kurs
         {
             Node tmp = Node.Create(pos, NodesCount);
             Nodes.Add(tmp);
-            nodesId.Add(tmp.ID,tmp);
+            nodesId.Add(tmp.ID, tmp);
             NodesCount++;
         }
         public void CreateNode(Node node)
         {
             Nodes.Add(node);
-            nodesId.Add(node.ID,node);
-            node.Text += "_del";
+            nodesId.Add(node.ID, node);
             foreach (var item in node.Path)
             {
 
@@ -189,7 +192,7 @@ namespace Kurs
                 Edges.Remove(edgesId[item.Value]);
             }
             nodesId.Remove(node.ID);
-            NodesCount--;
+
         }
         public void DeleteEdge(Node node1, Node node2)
         {
@@ -200,7 +203,6 @@ namespace Kurs
             edge.B.Path.Remove(edge.A.ID);
             Edges.Remove(edge);
             edgesId.Remove(edge.ID);
-            EdgesCount--;
         }
 
         public Node Find(int id)
@@ -208,7 +210,7 @@ namespace Kurs
             return nodesId[id];
         }
         #endregion
-        
+
         #region Serialization
 
         public XmlSchema GetSchema()
@@ -230,7 +232,7 @@ namespace Kurs
 
 
             reader.ReadStartElement();
-            while(reader.NodeType != XmlNodeType.EndElement)
+            while (reader.NodeType != XmlNodeType.EndElement)
             {
                 cur_Edge = ser_Edges.Deserialize(reader) as Edge;
                 Edges.Add(cur_Edge);
@@ -337,7 +339,7 @@ namespace Kurs
             var pathSerializer = new XmlSerializer(typeof(Entry[]));
             reader.ReadStartElement();
             reader.ReadStartElement();
-            Path = SerializableDictionary<int,int>.Create( pathSerializer.Deserialize(reader) as Entry[] );
+            Path = SerializableDictionary<int, int>.Create(pathSerializer.Deserialize(reader) as Entry[]);
             reader.ReadEndElement();
             reader.ReadEndElement();
 
@@ -348,14 +350,14 @@ namespace Kurs
             reader.ReadStartElement();
             var x = reader.ReadElementContentAsDouble();
             var y = reader.ReadElementContentAsDouble();
-            Pos = new Point( x , y);
+            Pos = new Point(x, y);
             reader.ReadEndElement();
             reader.ReadEndElement();
         }
 
         public void WriteXml(XmlWriter writer)
         {
-            
+
             writer.WriteStartElement(nameof(Path));
             var ser = new XmlSerializer(typeof(SerializableDictionary<int, int>));
             ser.Serialize(writer, Path);
@@ -385,14 +387,14 @@ namespace Kurs
     [Serializable()]
     public class Edge
     {
-        
-        public Node B { get { return parent.Find( b ); } }
+
+        public Node B { get { return parent.Find(b); } }
         [field: NonSerialized()]
         private int a;
         [field: NonSerialized()]
         private int b;
         private Graph parent;
-        public Node A { get { return parent.Find( a ); } }
+        public Node A { get { return parent.Find(a); } }
         public int ID { get; set; }
         public int Weight { get; set; }
         public static Edge Create(Node a, Node b, int id)
@@ -425,6 +427,7 @@ namespace Kurs
             this.parent = parent;
         }
     }
+
     #region Commands
     interface BaseCommand
     {

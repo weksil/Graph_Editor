@@ -17,13 +17,13 @@ namespace Kurs
         Graph graph = new Graph();
         Point pressPoint;
         Queue<Node> nodes = new Queue<Node>();
-        Dictionary<int , Action<object>> MainOperations;
+        Dictionary<int, Action<object>> MainOperations;
         #region Rename txtBlocks
         TextBlock tBlock;
         TextBox tBox;
         #endregion
 
-        Dictionary<Key , int> Mods = new Dictionary<Key , int>()
+        Dictionary<Key, int> Mods = new Dictionary<Key, int>()
             {
             {Key.None,0 },
             {cnsAddNode,1 },
@@ -47,7 +47,7 @@ namespace Kurs
 
             DataContext = graph;
 
-            MainOperations = new Dictionary<int , Action<object>>() {
+            MainOperations = new Dictionary<int, Action<object>>() {
                 { Mods[cnsAddEdge] , CreateDelEdge} ,
                 { Mods[cnsAddNode], CreateNode} ,
                 { Mods[cnsRemoveNode] , DelNode} ,
@@ -56,52 +56,52 @@ namespace Kurs
         }
 
         #region Events
-        private void Border_MouseDown(object sender , MouseButtonEventArgs e)
+        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
 
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 var border = sender as Border;
-                if (CurrMod != Mods[ Key.None ] && CurrMod != Mods[ cnsAddNode ])
+                if (CurrMod != Mods[Key.None] && CurrMod != Mods[cnsAddNode])
                 {
-                    MainOperations[ CurrMod ].Invoke(sender);
+                    MainOperations[CurrMod].Invoke(sender);
                 }
 
                 pressPoint = e.GetPosition(this);
-                if (CurrMod == Mods[ Key.None ])
+                if (CurrMod == Mods[Key.None])
                     border.CaptureMouse();
                 e.Handled = true;
             }
         }
 
-        private void Border_MouseMove(object sender , MouseEventArgs e)
+        private void Border_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && CurrMod != Mods[ cnsRenameNode ])
+            if (e.LeftButton == MouseButtonState.Pressed && CurrMod != Mods[cnsRenameNode])
             {
-                MoveNode(sender , e.GetPosition(this));
+                MoveNode(sender, e.GetPosition(this));
             }
             e.Handled = true;
         }
 
-        private void Border_MouseUp(object sender , MouseButtonEventArgs e)
+        private void Border_MouseUp(object sender, MouseButtonEventArgs e)
         {
             var border = sender as Border;
             border.ReleaseMouseCapture();
             e.Handled = true;
         }
 
-        private void ItemsControl_MouseDown(object sender , MouseButtonEventArgs e)
+        private void ItemsControl_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (CurrMod != Mods[ Key.None ])
-                MainOperations[ CurrMod ].Invoke(e);
-            if (CurrMod == Mods[ cnsRenameNode ])
+            if (CurrMod != Mods[Key.None])
+                MainOperations[CurrMod].Invoke(e);
+            if (CurrMod == Mods[cnsRenameNode])
                 EndRename();
             e.Handled = true;
         }
 
-        private void Window_KeyUp(Object sender , KeyEventArgs e)
+        private void Window_KeyUp(Object sender, KeyEventArgs e)
         {
-            if (e.Key == cnsAddEdge && CurrMod != Mods[ cnsRenameNode ])
+            if (e.Key == cnsAddEdge && CurrMod != Mods[cnsRenameNode])
             {
                 if (nodes.Count != 0)
                 {
@@ -109,15 +109,15 @@ namespace Kurs
                     tmp.InvertSelect();
                 }
             }
-            if (CurrMod != Mods[ cnsRenameNode ])
-                CurrMod = Mods[ Key.None ];
+            if (CurrMod != Mods[cnsRenameNode])
+                CurrMod = Mods[Key.None];
             else if (nodes.Count == 0)
-                CurrMod = Mods[ Key.None ];
+                CurrMod = Mods[Key.None];
             tbtest.Text = CurrMod.ToString(); //test
             e.Handled = true;
         }
 
-        private void Window_KeyDown(Object sender , KeyEventArgs e)
+        private void Window_KeyDown(Object sender, KeyEventArgs e)
         {
             if (e.Key == cnsUndoKey && Keyboard.Modifiers == ModifierKeys.Control)
             {
@@ -127,15 +127,15 @@ namespace Kurs
             {
                 graph.Redo();
             }
-            if (CurrMod == Mods[ Key.None ] && Keyboard.Modifiers == ModifierKeys.None)
+            if (CurrMod == Mods[Key.None] && Keyboard.Modifiers == ModifierKeys.None)
                 if (Mods.ContainsKey(e.Key))
-                    CurrMod = Mods[ e.Key ];
+                    CurrMod = Mods[e.Key];
             tbtest.Text = CurrMod.ToString(); //test
             if (e.Key == Key.S) graph.Save();
             if (e.Key == Key.L) Load();
         }
 
-        private void TextBox_KeyDown(Object sender , KeyEventArgs e)
+        private void TextBox_KeyDown(Object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
             {
@@ -148,7 +148,7 @@ namespace Kurs
         #region LeftMouseDown
         void CreateDelEdge(object sender)
         {
-            var node = ( sender as Border )?.DataContext as Node;
+            var node = (sender as Border)?.DataContext as Node;
             if (node == null)
                 return;
             node.InvertSelect();
@@ -164,13 +164,13 @@ namespace Kurs
             {
                 var lastNode = nodes.Dequeue();
                 lastNode.InvertSelect();
-                graph.ConnectNodes(lastNode , nodes.Peek());
+                graph.ConnectNodes(lastNode, nodes.Peek());
             }
         }
 
         void DelNode(object sender)
         {
-            var node = ( sender as Border )?.DataContext as Node;
+            var node = (sender as Border)?.DataContext as Node;
             if (node == null)
                 return;
             graph.RemoveNode(node);
@@ -178,7 +178,7 @@ namespace Kurs
 
         void RenameNode(object sender)
         {
-            var node = ( sender as Border )?.DataContext as Node;
+            var node = (sender as Border)?.DataContext as Node;
             if (node == null)
                 return;
             if (nodes.Count > 0)
@@ -187,12 +187,12 @@ namespace Kurs
                 return;
             }
             nodes.Enqueue(node);
-            var tmp = ( ( sender as Border ).Child as Grid ).Children;
-            tBlock = tmp[ 0 ] as TextBlock;
-            tBox = tmp[ 1 ] as TextBox;
+            var tmp = ((sender as Border).Child as Grid).Children;
+            tBlock = tmp[0] as TextBlock;
+            tBox = tmp[1] as TextBox;
             tBlock.Visibility = Visibility.Hidden;
             tBox.Visibility = Visibility.Visible;
-            CurrMod = Mods[ cnsRenameNode ];
+            CurrMod = Mods[cnsRenameNode];
         }
 
         void EndRename()
@@ -202,22 +202,22 @@ namespace Kurs
             var node = nodes.Dequeue();
             if (tBox.Text != "")
             {
-                graph.RenameNode(node , tBox.Text);
+                graph.RenameNode(node, tBox.Text);
             }
             tBlock.Visibility = Visibility.Visible;
             tBox.Visibility = Visibility.Hidden;
-            CurrMod = Mods[ Key.None ];
+            CurrMod = Mods[Key.None];
             tbtest.Text = CurrMod.ToString(); //test
         }
 
         void CreateNode(object sender)
         {
-            var curpos = ( sender as MouseButtonEventArgs ).GetPosition(this);
+            var curpos = (sender as MouseButtonEventArgs).GetPosition(this);
             graph.AddNode(curpos);
             pressPoint = curpos;
         }
 
-        void MoveNode(object sender , Point curPos)
+        void MoveNode(object sender, Point curPos)
         {
             var border = sender as Border;
             var node = border.DataContext as Node;

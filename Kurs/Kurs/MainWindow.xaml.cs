@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.IO;
 
 namespace Kurs
 {
@@ -131,8 +133,9 @@ namespace Kurs
                 if (Mods.ContainsKey(e.Key))
                     CurrMod = Mods[e.Key];
             tbtest.Text = CurrMod.ToString(); //test
-            if (e.Key == Key.S) graph.Save();
+            if (e.Key == Key.S) Save();
             if (e.Key == Key.L) Load();
+            e.Handled = true;
         }
 
         private void TextBox_KeyDown(Object sender, KeyEventArgs e)
@@ -231,17 +234,40 @@ namespace Kurs
         }
 
         #endregion
-
         #region RightMouseDown
 
         #endregion
-
         void Load()
         {
-            graph = graph.Load();
-            DataContext = graph;
+            OpenFileDialog dlg = new OpenFileDialog();
+            var path = Path.GetDirectoryName(Application.ResourceAssembly.Location) + graph.FilePath;
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+            dlg.InitialDirectory = path;
+            bool? res = dlg.ShowDialog();
+            if (res == true)
+            {
+                graph = graph.Load(dlg.OpenFile());
+                DataContext = graph;
+            }
+           
+        }
+        void Save()
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.FileName = graph.FileName;
+            var path = Path.GetDirectoryName(Application.ResourceAssembly.Location) + graph.FilePath;
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+            dlg.InitialDirectory = path;
+            dlg.DefaultExt = graph.FileExt;
+
+            bool? res = dlg.ShowDialog();
+            if (res == true)
+            {
+                graph.Save(dlg.InitialDirectory,dlg.SafeFileName);
+            }
         }
         #endregion
-
     }
 }

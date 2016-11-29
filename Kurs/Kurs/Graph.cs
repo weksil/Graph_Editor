@@ -22,20 +22,20 @@ namespace Kurs
         private int EdgesCount;
 
         private string fileName = "Graph.xml";
-        private string filePath = @"Saves/";
+        private string filePath = @"Saves\";
+
+        public string FileName { get { return fileName; } }
+        public string FilePath { get { return '\\'+filePath; } }
+        public string FileExt { get { return ".xml"; } }
+
 
         private List<BaseCommand> History;
         private int historyStep;
-
-
         public Graph()
         {
             Nodes = new ObservableCollection<Node>();
             Edges = new ObservableCollection<Edge>();
             History = new List<BaseCommand>();
-            /*
-            NodesCount = 0;
-            EdgesCount = 0;*/
         }
         public void Undo()
         {
@@ -93,7 +93,6 @@ namespace Kurs
             com.Execute();
             History.Add(com);
         }
-
         public void ConnectNodes(int node1_ID, int node2_ID)
         {
             ConnectNodes(nodesId[node1_ID], nodesId[node2_ID]);
@@ -107,35 +106,45 @@ namespace Kurs
         }
         public void Save()
         {
-            if (!Directory.Exists(filePath)) Directory.CreateDirectory(filePath);
-            Stream sw = File.Create(filePath + fileName);
+            Save(filePath , fileName);
+        }
+        public void Save(string path,string name)
+        {
+            if (!Directory.Exists(path))
+                throw new NullReferenceException("missing directory");
+            Stream sw = File.Create(path + name);
             XmlSerializer ser = new XmlSerializer(this.GetType());
-            ser.Serialize(sw, this);
+            ser.Serialize(sw , this);
             sw.Close();
+        }
+        public Graph Load(Stream reader)
+        {
+            XmlSerializer ser = new XmlSerializer(this.GetType());
+            var res = ser.Deserialize(reader) as Graph;
+            reader.Close();
+            return res;
         }
         public Graph Load(string path, string name)
         {
 
             if (Directory.Exists(path))
+            {
                 if (File.Exists(path + name))
                 {
                     Stream sw = File.OpenRead(path + name);
-                    XmlSerializer ser = new XmlSerializer(this.GetType());
-                    var res = ser.Deserialize(sw) as Graph;
-                    sw.Close();
-                    return res;
+                    return Load(sw);
                 }
+                else
+                {
+                    throw new NullReferenceException("missing file");
+                }
+            }
             return null;
         }
-
         public Graph Load()
         {
-
-            return Load(filePath, fileName);
+            return Load(filePath , fileName);
         }
-
-
-
         #region Logic
         public void CreateEdge(Node a, Node b)
         {
@@ -173,10 +182,6 @@ namespace Kurs
             nodesId.Add(tmp.ID, tmp);
             NodesCount++;
         }
-        /// <summary>
-        /// Find edge is connected node1 and node2. If edge was not created return null
-        /// </summary>
-        /// <returns></returns>
         public Edge FindEdge(Node node1, Node node2)
         {
             if (node1.Path.ContainsKey(node2.ID))
@@ -204,20 +209,16 @@ namespace Kurs
             Edges.Remove(edge);
             edgesId.Remove(edge.ID);
         }
-
         public Node Find(int id)
         {
             return nodesId[id];
         }
         #endregion
-
         #region Serialization
-
         public XmlSchema GetSchema()
         {
             return null;
         }
-
         public void ReadXml(XmlReader reader)
         {
             if (reader.IsEmptyElement) return;
@@ -256,7 +257,6 @@ namespace Kurs
             reader.ReadEndElement();
 
         }
-
         public void WriteXml(XmlWriter writer)
         {
             writer.WriteStartElement(nameof(EdgesCount));

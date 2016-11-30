@@ -110,12 +110,15 @@ namespace Kurs
         }
         public void Save(string path,string name)
         {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(name))
+                return;
             if (!Directory.Exists(path))
                 throw new NullReferenceException("missing directory");
             Stream sw = File.Create(path + name);
             XmlSerializer ser = new XmlSerializer(this.GetType());
             ser.Serialize(sw , this);
             sw.Close();
+            fileName = name;
         }
         public Graph Load(Stream reader)
         {
@@ -228,37 +231,54 @@ namespace Kurs
             Edge cur_Edge = null;
             Node cur_Node = null;
 
+            var edgesCount = reader.ReadElementContentAsInt();
+            var nodesCount = reader.ReadElementContentAsInt();
+
             EdgesCount = reader.ReadElementContentAsInt();
             NodesCount = reader.ReadElementContentAsInt();
 
+            reader.ReadStartElement();
+            if (edgesCount != 0)
+            { 
+                while (reader.NodeType != XmlNodeType.EndElement)
+                {
+                    cur_Edge = ser_Edges.Deserialize(reader) as Edge;
+                    Edges.Add(cur_Edge);
+                    edgesId.Add(cur_Edge.ID, cur_Edge);
+                    cur_Edge.SetParent(this);
+                    reader.MoveToContent();
+                }
+                reader.ReadEndElement();
+            }
 
             reader.ReadStartElement();
-            while (reader.NodeType != XmlNodeType.EndElement)
+            if (nodesCount != 0)
             {
-                cur_Edge = ser_Edges.Deserialize(reader) as Edge;
-                Edges.Add(cur_Edge);
-                edgesId.Add(cur_Edge.ID, cur_Edge);
-                cur_Edge.SetParent(this);
-                reader.MoveToContent();
-            }
-            reader.ReadEndElement();
-            reader.ReadStartElement();
-            while (reader.NodeType != XmlNodeType.EndElement)
-            {
-                cur_Node = ser_Nodes.Deserialize(reader) as Node;
-                Nodes.Add(cur_Node);
-                nodesId.Add(cur_Node.ID, cur_Node);
-                foreach (var item in cur_Node.Path)
+                while (reader.NodeType != XmlNodeType.EndElement && EdgesCount != 0)
                 {
-                    edgesId[item.Value].Connect(cur_Node.ID, item.Key);
+                    cur_Node = ser_Nodes.Deserialize(reader) as Node;
+                    Nodes.Add(cur_Node);
+                    nodesId.Add(cur_Node.ID, cur_Node);
+                    foreach (var item in cur_Node.Path)
+                    {
+                        edgesId[item.Value].Connect(cur_Node.ID, item.Key);
+                    }
+                    reader.MoveToContent();
                 }
-                reader.MoveToContent();
+                reader.ReadEndElement();
             }
-            reader.ReadEndElement();
 
         }
         public void WriteXml(XmlWriter writer)
         {
+            writer.WriteStartElement("Edghes.count");
+            writer.WriteValue(Edges.Count);
+            writer.WriteEndElement();
+
+            writer.WriteStartElement("Nodes.count");
+            writer.WriteValue(Nodes.Count);
+            writer.WriteEndElement();
+
             writer.WriteStartElement(nameof(EdgesCount));
             writer.WriteValue(EdgesCount);
             writer.WriteEndElement();

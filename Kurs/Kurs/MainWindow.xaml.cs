@@ -142,8 +142,16 @@ namespace Kurs
             if (CurrMod == Mods[Key.None] && Keyboard.Modifiers == ModifierKeys.None)
                 if (Mods.ContainsKey(firstPressed))
                     CurrMod = Mods[firstPressed];
-            if (firstPressed == cnsSaveKey) Save();
-            if (firstPressed == cnsLoadKey) Load();
+            if (firstPressed == cnsSaveKey)
+            {
+                firstPressed = Key.None;
+                Save();
+            }
+            if (firstPressed == cnsLoadKey)
+            {
+                firstPressed = Key.None;
+                Load();
+            }
             tbtest.Text = CurrMod.ToString(); //test
         }
         private void TextBox_KeyDown(Object sender, KeyEventArgs e)
@@ -262,6 +270,7 @@ namespace Kurs
         #endregion
         void Load()
         {
+            Save();
             OpenFileDialog dlg = new OpenFileDialog();
             var path = Path.GetDirectoryName(Application.ResourceAssembly.Location) + graph.FilePath;
             if (!Directory.Exists(path))

@@ -333,7 +333,6 @@ namespace Kurs
         {
             pos = moveTo;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(pos)));
-            //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(centr)));
         }
         public void SetCentr(Point newCentr)
         {
@@ -417,11 +416,11 @@ namespace Kurs
             writer.WriteStartElement(nameof(Centr));
 
             writer.WriteStartElement(nameof(centr.X));
-            writer.WriteValue(pos.X);
+            writer.WriteValue(centr.X);
             writer.WriteEndElement();
 
             writer.WriteStartElement(nameof(centr.Y));
-            writer.WriteValue(pos.Y);
+            writer.WriteValue(centr.Y);
             writer.WriteEndElement();
 
             writer.WriteEndElement();

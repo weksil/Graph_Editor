@@ -25,7 +25,7 @@ namespace Kurs
         private string filePath = @"Saves\";
 
         public string FileName { get { return fileName; } }
-        public string FilePath { get { return '\\'+filePath; } }
+        public string FilePath { get { return '\\' + filePath; } }
         public string FileExt { get { return ".xml"; } }
 
 
@@ -106,9 +106,9 @@ namespace Kurs
         }
         public void Save()
         {
-            Save(filePath , fileName);
+            Save(filePath, fileName);
         }
-        public void Save(string path,string name)
+        public void Save(string path, string name)
         {
             if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(name))
                 return;
@@ -116,7 +116,7 @@ namespace Kurs
                 throw new NullReferenceException("missing directory");
             Stream sw = File.Create(path + name);
             XmlSerializer ser = new XmlSerializer(this.GetType());
-            ser.Serialize(sw , this);
+            ser.Serialize(sw, this);
             sw.Close();
             fileName = name;
         }
@@ -146,7 +146,7 @@ namespace Kurs
         }
         public Graph Load()
         {
-            return Load(filePath , fileName);
+            return Load(filePath, fileName);
         }
         #region Logic
         public void CreateEdge(Node a, Node b)
@@ -239,7 +239,7 @@ namespace Kurs
 
             reader.ReadStartElement();
             if (edgesCount != 0)
-            { 
+            {
                 while (reader.NodeType != XmlNodeType.EndElement)
                 {
                     cur_Edge = ser_Edges.Deserialize(reader) as Edge;
@@ -303,6 +303,7 @@ namespace Kurs
         public event PropertyChangedEventHandler PropertyChanged;
         public SerializableDictionary<int, int> Path;
         private Point pos;
+        private Point centr;
         [field: NonSerialized()]
         private bool selected;
         public void Rename(string name)
@@ -313,14 +314,10 @@ namespace Kurs
         public Point Pos
         {
             get { return pos; }
-            set
-            {
-                if (pos != value)
-                {
-                    pos = value;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(pos)));
-                }
-            }
+        }
+        public Point Centr
+        {
+            get { return centr; }
         }
         public bool Selected { get { return selected; } }
         public double SelectedOpacity
@@ -332,7 +329,17 @@ namespace Kurs
             selected = !selected;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedOpacity)));
         }
-
+        public void Move(Point moveTo)
+        {
+            pos = moveTo;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(pos)));
+            //PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(centr)));
+        }
+        public void SetCentr(Point newCentr)
+        {
+            centr = newCentr;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(centr)));
+        }
         public static Node Create(Point position, string text, int id)
         {
             Node res = new Node();
@@ -346,12 +353,10 @@ namespace Kurs
         {
             return Create(position, String.Format("Node{0}", numb), numb);
         }
-
         public XmlSchema GetSchema()
         {
             return null;
         }
-
         public void ReadXml(XmlReader reader)
         {
             if (reader.IsEmptyElement) return;
@@ -370,11 +375,17 @@ namespace Kurs
             reader.ReadStartElement();
             var x = reader.ReadElementContentAsDouble();
             var y = reader.ReadElementContentAsDouble();
-            Pos = new Point(x, y);
+            pos = new Point(x, y);
             reader.ReadEndElement();
+
+            reader.ReadStartElement();
+            x = reader.ReadElementContentAsDouble();
+            y = reader.ReadElementContentAsDouble();
+            centr = new Point(x, y);
+            reader.ReadEndElement();
+
             reader.ReadEndElement();
         }
-
         public void WriteXml(XmlWriter writer)
         {
 
@@ -398,6 +409,18 @@ namespace Kurs
             writer.WriteEndElement();
 
             writer.WriteStartElement(nameof(pos.Y));
+            writer.WriteValue(pos.Y);
+            writer.WriteEndElement();
+
+            writer.WriteEndElement();
+
+            writer.WriteStartElement(nameof(Centr));
+
+            writer.WriteStartElement(nameof(centr.X));
+            writer.WriteValue(pos.X);
+            writer.WriteEndElement();
+
+            writer.WriteStartElement(nameof(centr.Y));
             writer.WriteValue(pos.Y);
             writer.WriteEndElement();
 
@@ -447,7 +470,6 @@ namespace Kurs
             this.parent = parent;
         }
     }
-
     #region Commands
     interface BaseCommand
     {

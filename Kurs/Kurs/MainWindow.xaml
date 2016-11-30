@@ -12,31 +12,58 @@
         <ItemsPanelTemplate x:Key="cnv">
             <Canvas/>
         </ItemsPanelTemplate>
-
+        <Style x:Key="Node">
+            <Setter Property="Border.BorderBrush" Value="Blue"/>
+            <Setter Property="Border.CornerRadius" Value="11"/>
+            <Setter Property="Border.Background" Value="#DDF"/>
+            <Setter Property="Border.BorderThickness" Value="2"/>
+        </Style>
     </Window.Resources>
-    <Grid>
-        <TextBlock x:Name="tbtest" />
-        <ItemsControl ItemsSource="{Binding Edges}" ItemsPanel="{StaticResource cnv}">
+    <Grid x:Name="mainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Menu Grid.Row="0">
+            <MenuItem Header="File">
+                <MenuItem Header="New" Click="MenuItem_Click_New"/>
+                <MenuItem Header="Load" Click="MenuItem_Click_Load"/>
+                <MenuItem Header="Save" Click="MenuItem_Click_Save"/>
+                <MenuItem Header="Save as">
+                    <MenuItem Header="Png"></MenuItem>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Edit">
+                <MenuItem Header="Undo" Click="MenuItem_Click_Undo"/>
+                <MenuItem Header="Redo" Click="MenuItem_Click_Redo"/>
+                <Separator></Separator>
+                <MenuItem Header="Add" Click="MenuItem_Click_Add"/>
+                <MenuItem Header="Delete" Click="MenuItem_Click_Delete"/>
+                <MenuItem Header="Rename" Click="MenuItem_Click_Rename"/>
+                <MenuItem Header="Connect" Click="MenuItem_Click_Connect"/>
+            </MenuItem>
+            <MenuItem Header="?" Click="MenuItem_Click_Help"/>
+        </Menu>
+        <TextBlock x:Name="tbtest" Grid.Row="1"/>
+        <ItemsControl ItemsSource="{Binding Edges}" ItemsPanel="{StaticResource cnv}" Grid.Row="1">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Line X1="{Binding A.Pos.X}" Y1="{Binding A.Pos.Y}"
-                    X2="{Binding B.Pos.X}" Y2="{Binding B.Pos.Y}"
+                    <Line X1="{Binding A.Centr.X}" Y1="{Binding A.Centr.Y}"
+                    X2="{Binding B.Centr.X}" Y2="{Binding B.Centr.Y}"
                     Stroke="Green" StrokeThickness="2"/>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-
-        <ItemsControl ItemsSource="{Binding Nodes}" ItemsPanel="{StaticResource cnv}"
+        <ItemsControl ItemsSource="{Binding Nodes}" ItemsPanel="{StaticResource cnv}" x:Name="mainCanvas"
                   Background="#1FFF"
-                  MouseDown="ItemsControl_MouseDown">
+                  MouseLeftButtonDown="ItemsControl_MouseDown" Grid.Row="1">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Border BorderBrush="Blue" BorderThickness="2" CornerRadius="10"
-                  Background="#DDF" 
-                  MouseDown="Border_MouseDown"
-                  MouseMove="Border_MouseMove"
-                  MouseUp="Border_MouseUp"
-                  >
+                    <Border
+                        MouseLeftButtonDown="Border_MouseDown"
+                        MouseMove="Border_MouseMove"
+                        MouseLeftButtonUp="Border_MouseUp"
+                        Style="{StaticResource Node}">
                         <Border.BitmapEffect>
                             <DropShadowBitmapEffect Opacity="{Binding SelectedOpacity}" />
                         </Border.BitmapEffect>
@@ -46,14 +73,13 @@
                         </Grid>
                         <Border.RenderTransform>
                             <TransformGroup>
-                                <TranslateTransform X="-40" Y="-20"/>
                                 <TranslateTransform X="{Binding Pos.X}" Y="{Binding Pos.Y}"/>
                             </TransformGroup>
                         </Border.RenderTransform>
+                        
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-
     </Grid>
 </Window>

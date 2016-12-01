@@ -8,9 +8,6 @@ using System.IO;
 
 namespace Kurs
 {
-    /// <summary>
-    /// Логика взаимодействия для MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         #region Variables
@@ -349,6 +346,33 @@ namespace Kurs
         {
             CurrMod = Mods[cnsAddEdge];
             tbtest.Text = CurrMod.ToString(); //test
+        }
+        private void MenuItem_Click_Node_Fill_Color(Object sender, RoutedEventArgs e)
+        {
+            var dlg = new ColorDialog();
+            dlg.SetColor(graph.FillColor);
+            if (dlg.ShowDialog() == true)
+            {
+                graph.FillColor = dlg.fillColor;
+            }
+        }
+        private void MenuItem_Click_Node_Border_Color(Object sender, RoutedEventArgs e)
+        {
+            var dlg = new ColorDialog();
+            dlg.SetColor(graph.BorderColor);
+            if (dlg.ShowDialog() == true)
+            {
+                graph.BorderColor = dlg.fillColor;
+            }
+        }
+        private void MenuItem_Click_Edge_Color(Object sender, RoutedEventArgs e)
+        {
+            var dlg = new ColorDialog();
+            dlg.SetColor(graph.EdgeColor);
+            if (dlg.ShowDialog() == true)
+            {
+                graph.EdgeColor = dlg.fillColor;
+            }
         }
         private void MenuItem_Click_Help(Object sender, RoutedEventArgs e)
         {

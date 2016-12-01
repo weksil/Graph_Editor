@@ -12,12 +12,6 @@
         <ItemsPanelTemplate x:Key="cnv">
             <Canvas/>
         </ItemsPanelTemplate>
-        <Style x:Key="Node">
-            <Setter Property="Border.BorderBrush" Value="Blue"/>
-            <Setter Property="Border.CornerRadius" Value="11"/>
-            <Setter Property="Border.Background" Value="#DDF"/>
-            <Setter Property="Border.BorderThickness" Value="2"/>
-        </Style>
     </Window.Resources>
     <Grid x:Name="mainGrid">
         <Grid.RowDefinitions>
@@ -42,6 +36,16 @@
                 <MenuItem Header="Rename" Click="MenuItem_Click_Rename"/>
                 <MenuItem Header="Connect" Click="MenuItem_Click_Connect"/>
             </MenuItem>
+            <MenuItem Header="Property">
+                <MenuItem Header="Node">
+                    <MenuItem Header="Fill Color" Click="MenuItem_Click_Node_Fill_Color"/>
+                    <MenuItem Header="Border Color" Click="MenuItem_Click_Node_Border_Color"/>
+                </MenuItem>
+                <Separator></Separator>
+                <MenuItem Header="Edge">
+                    <MenuItem Header="Color" Click="MenuItem_Click_Edge_Color"/>
+                </MenuItem>
+            </MenuItem>
             <MenuItem Header="?" Click="MenuItem_Click_Help"/>
         </Menu>
         <TextBlock x:Name="tbtest" Grid.Row="1"/>
@@ -50,7 +54,7 @@
                 <DataTemplate>
                     <Line X1="{Binding A.Centr.X}" Y1="{Binding A.Centr.Y}"
                     X2="{Binding B.Centr.X}" Y2="{Binding B.Centr.Y}"
-                    Stroke="Green" StrokeThickness="2"/>
+                    Stroke="{Binding FillColor}" StrokeThickness="2"/>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
@@ -63,7 +67,8 @@
                         MouseLeftButtonDown="Border_MouseDown"
                         MouseMove="Border_MouseMove"
                         MouseLeftButtonUp="Border_MouseUp"
-                        Style="{StaticResource Node}">
+                        CornerRadius="10" BorderThickness="2"
+                        Background="{Binding FillColor}" BorderBrush="{Binding BorderColor}">
                         <Border.BitmapEffect>
                             <DropShadowBitmapEffect Opacity="{Binding SelectedOpacity}" />
                         </Border.BitmapEffect>
@@ -76,7 +81,6 @@
                                 <TranslateTransform X="{Binding Pos.X}" Y="{Binding Pos.Y}"/>
                             </TransformGroup>
                         </Border.RenderTransform>
-                        
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

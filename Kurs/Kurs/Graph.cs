@@ -8,6 +8,7 @@ using System.Xml.Serialization;
 using System.IO;
 using System.Xml;
 using System.Xml.Schema;
+using System.Windows.Media;
 
 namespace Kurs
 {
@@ -16,26 +17,38 @@ namespace Kurs
     {
         public ObservableCollection<Edge> Edges { get; }
         public ObservableCollection<Node> Nodes { get; }
+        public Color BorderColor { get; set; }
+        public Color FillColor { get; set; }
+        private Color edgeColor;
         private Dictionary<int, Node> nodesId = new Dictionary<int, Node>();
         private Dictionary<int, Edge> edgesId = new Dictionary<int, Edge>();
         private int NodesCount;
         private int EdgesCount;
-
         private string fileName = "Graph.xml";
         private string filePath = @"Saves\";
-
         public string FileName { get { return fileName; } }
         public string FilePath { get { return '\\' + filePath; } }
         public string FileExt { get { return ".xml"; } }
 
+        public Color EdgeColor {
+            get { return edgeColor; }
+            set
+            {
+                edgeColor = value;
+                foreach (var item in Edges)  item.ChangeColor();
+            } }
 
         private List<BaseCommand> History;
         private int historyStep;
+
         public Graph()
         {
             Nodes = new ObservableCollection<Node>();
             Edges = new ObservableCollection<Edge>();
             History = new List<BaseCommand>();
+            BorderColor = Colors.Blue;
+            FillColor = Colors.LightBlue;
+            EdgeColor = Colors.Black;
         }
         public void Undo()
         {
@@ -162,6 +175,8 @@ namespace Kurs
         public void CreateNode(Point pos)
         {
             Node tmp = Node.Create(pos, NodesCount);
+            tmp.SetFillColor(FillColor);
+            tmp.SetBorderColor(BorderColor);
             Nodes.Add(tmp);
             nodesId.Add(tmp.ID, tmp);
             NodesCount++;
@@ -237,6 +252,11 @@ namespace Kurs
             EdgesCount = reader.ReadElementContentAsInt();
             NodesCount = reader.ReadElementContentAsInt();
 
+            var serclr = new XmlSerializer(BorderColor.GetType());
+            BorderColor = (Color)serclr.Deserialize(reader);
+            FillColor = (Color)serclr.Deserialize(reader);
+            EdgeColor = (Color)serclr.Deserialize(reader);
+
             reader.ReadStartElement();
             if (edgesCount != 0)
             {
@@ -254,7 +274,7 @@ namespace Kurs
             reader.ReadStartElement();
             if (nodesCount != 0)
             {
-                while (reader.NodeType != XmlNodeType.EndElement && EdgesCount != 0)
+                while (reader.NodeType != XmlNodeType.EndElement)
                 {
                     cur_Node = ser_Nodes.Deserialize(reader) as Node;
                     Nodes.Add(cur_Node);
@@ -287,6 +307,11 @@ namespace Kurs
             writer.WriteValue(NodesCount);
             writer.WriteEndElement();
 
+            var serclr = new XmlSerializer(BorderColor.GetType());
+            serclr.Serialize(writer, BorderColor);
+            serclr.Serialize(writer, FillColor);
+            serclr.Serialize(writer, EdgeColor);
+
             var serEdges = new XmlSerializer(typeof(ObservableCollection<Edge>));
             serEdges.Serialize(writer, Edges);
             var serNodes = new XmlSerializer(typeof(ObservableCollection<Node>));
@@ -298,12 +323,17 @@ namespace Kurs
     [XmlRoot(nameof(Node))]
     public class Node : INotifyPropertyChanged, IXmlSerializable
     {
-        public int ID { get; set; }
+        private Point pos;
+        private Point centr;
+        private int id;
+        private Color borderColor;
+        private Color fillColor;
+        public Brush BorderColor { get { return new SolidColorBrush(borderColor); } }
+        public Brush FillColor { get { return new SolidColorBrush(fillColor); } }
+        public int ID { get { return id; } }
         public string Text { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
         public SerializableDictionary<int, int> Path;
-        private Point pos;
-        private Point centr;
         [field: NonSerialized()]
         private bool selected;
         public void Rename(string name)
@@ -339,13 +369,23 @@ namespace Kurs
             centr = newCentr;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(centr)));
         }
+        public void SetFillColor(Color newclr)
+        {
+            fillColor = newclr;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(fillColor)));
+        }
+        public void SetBorderColor(Color newclr)
+        {
+            borderColor = newclr;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(borderColor)));
+        }
         public static Node Create(Point position, string text, int id)
         {
             Node res = new Node();
             res.pos = position;
             res.Text = text;
             res.Path = new SerializableDictionary<int, int>();
-            res.ID = id;
+            res.id = id;
             return res;
         }
         public static Node Create(Point position, int numb)
@@ -367,7 +407,7 @@ namespace Kurs
             reader.ReadEndElement();
             reader.ReadEndElement();
 
-            ID = reader.ReadElementContentAsInt();
+            id = reader.ReadElementContentAsInt();
 
             Text = reader.ReadElementContentAsString();
 
@@ -382,6 +422,10 @@ namespace Kurs
             y = reader.ReadElementContentAsDouble();
             centr = new Point(x, y);
             reader.ReadEndElement();
+
+            var serclr = new XmlSerializer(borderColor.GetType());
+            borderColor =  (Color)serclr.Deserialize(reader);
+            fillColor = (Color)serclr.Deserialize(reader);
 
             reader.ReadEndElement();
         }
@@ -424,10 +468,14 @@ namespace Kurs
             writer.WriteEndElement();
 
             writer.WriteEndElement();
+
+            var serclr = new XmlSerializer(borderColor.GetType());
+            serclr.Serialize(writer, borderColor);
+            serclr.Serialize(writer, fillColor);
         }
     }
     [Serializable()]
-    public class Edge
+    public class Edge: INotifyPropertyChanged
     {
 
         public Node B { get { return parent.Find(b); } }
@@ -435,35 +483,33 @@ namespace Kurs
         private int a;
         [field: NonSerialized()]
         private int b;
+        public Brush FillColor { get { return new SolidColorBrush(parent.EdgeColor); } }
         private Graph parent;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        public void ChangeColor()
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FillColor)));
+        }
         public Node A { get { return parent.Find(a); } }
         public int ID { get; set; }
-        public int Weight { get; set; }
         public static Edge Create(Node a, Node b, int id)
-        {
-            return Edge.Create(a, b, 1, id);
-        }
-        public static Edge Create(Node a, Node b, int weight, int id)
         {
             Edge res = new Edge();
             res.Connect(a, b);
-            res.Weight = weight;
             res.ID = id;
             return res;
         }
-
         public void Connect(int A, int B)
         {
             if (a == A && b == B || a == B && b == A) return;
             a = A;
             b = B;
         }
-
         public void Connect(Node A, Node B)
         {
             Connect(A.ID, B.ID);
         }
-
         public void SetParent(Graph parent)
         {
             this.parent = parent;

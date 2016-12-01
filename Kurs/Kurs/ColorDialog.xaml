@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Kurs"
         mc:Ignorable="d"
-        Title="ColorDialog" Height="245" Width="480"
-        MinHeight="245" MinWidth="480"
+        Title="ColorDialog" Height="260" Width="480"
+        MinHeight="260" MinWidth="480"
          WindowStartupLocation="CenterScreen">
     <Grid>
         <StackPanel>
@@ -15,18 +15,21 @@
                     <TextBlock Text="R" FontSize="26"/>
                     <TextBlock Text="G" FontSize="26"/>
                     <TextBlock Text="B" FontSize="26"/>
+                    <TextBlock Text="A" FontSize="26"/>
                     <TextBlock Text="Hex" FontSize="26"/>
                 </StackPanel>
                 <StackPanel Width="140">
                     <TextBox Text="255" x:Name="R" LostFocus="R_LostFocus" PreviewTextInput="All_PreviewTextInput" Height="35" FontSize="24"/>
                     <TextBox Text="255" x:Name="G" LostFocus="G_LostFocus" PreviewTextInput="All_PreviewTextInput" Height="35" FontSize="24"/>
                     <TextBox Text="255" x:Name="B" LostFocus="B_LostFocus" PreviewTextInput="All_PreviewTextInput" Height="35" FontSize="24"/>
+                    <TextBox Text="255" x:Name="A" LostFocus="A_LostFocus" PreviewTextInput="All_PreviewTextInput" Height="35" FontSize="24"/>
                     <TextBox Text="#00000000" x:Name="Hex" LostFocus="Hex_LostFocus" Height="35" FontSize="24"/>
                 </StackPanel>
                 <StackPanel Margin="10,0,0,0">
                     <Slider Orientation="Horizontal" x:Name="RS" Height="35" Width="100" ValueChanged="Slider_R_ValueChanged" Maximum="255" Minimum="0"/>
                     <Slider Orientation="Horizontal" x:Name="GS" Height="35" Width="100" ValueChanged="Slider_G_ValueChanged" Maximum="255" Minimum="0"/>
                     <Slider Orientation="Horizontal" x:Name="BS" Height="35" Width="100" ValueChanged="Slider_B_ValueChanged" Maximum="255" Minimum="0"/>
+                    <Slider Orientation="Horizontal" x:Name="AS" Height="35" Width="100" ValueChanged="Slider_A_ValueChanged" Maximum="255" Minimum="0"/>
                 </StackPanel>
                 <Rectangle x:Name="Example" Width="140" Height="140" Margin="10"/>
             </StackPanel>

@@ -29,10 +29,12 @@ namespace Kurs
             R.Text = fillColor.R.ToString();
             G.Text = fillColor.G.ToString();
             B.Text = fillColor.B.ToString();
+            A.Text = fillColor.A.ToString();
             Hex.Text = fillColor.ToString();
             RS.Value = fillColor.R;
             GS.Value = fillColor.G;
             BS.Value = fillColor.B;
+            AS.Value = fillColor.A;
         }
         private void R_LostFocus(Object sender, RoutedEventArgs e)
         {
@@ -42,6 +44,8 @@ namespace Kurs
                 return;
             fillColor.R = Byte.Parse(R.Text);
             Example.Fill = FillColor;
+            Hex.Text = fillColor.ToString();
+            RS.Value = fillColor.R;
         }
         private void G_LostFocus(Object sender, RoutedEventArgs e)
         {
@@ -51,6 +55,8 @@ namespace Kurs
                 return;
             fillColor.G = Byte.Parse(G.Text);
             Example.Fill = FillColor;
+            Hex.Text = fillColor.ToString();
+            GS.Value = fillColor.G;
         }
         private void B_LostFocus(Object sender, RoutedEventArgs e)
         {
@@ -58,8 +64,21 @@ namespace Kurs
                 B.Text = "0";
             if (B.Text.Length > 3)
                 return;
-            fillColor.G = Byte.Parse(B.Text);
+            fillColor.B = Byte.Parse(B.Text);
             Example.Fill = FillColor;
+            Hex.Text = fillColor.ToString();
+            BS.Value = fillColor.B;
+        }
+        private void A_LostFocus(Object sender, RoutedEventArgs e)
+        {
+            if (String.IsNullOrEmpty(A.Text))
+                A.Text = "0";
+            if (A.Text.Length > 3)
+                return;
+            fillColor.A = Byte.Parse(A.Text);
+            Example.Fill = FillColor;
+            Hex.Text = fillColor.ToString();
+            AS.Value = fillColor.A;
         }
         private void Hex_LostFocus(Object sender, RoutedEventArgs e)
         {
@@ -71,6 +90,14 @@ namespace Kurs
                 return;
             fillColor = (Color)ColorConverter.ConvertFromString(Hex.Text);
             Example.Fill = FillColor;
+            R.Text = fillColor.R.ToString();
+            G.Text = fillColor.G.ToString();
+            B.Text = fillColor.B.ToString();
+            A.Text = fillColor.A.ToString();
+            RS.Value = fillColor.R;
+            GS.Value = fillColor.G;
+            BS.Value = fillColor.B;
+            AS.Value = fillColor.A;
         }
         private void All_PreviewTextInput(Object sender, TextCompositionEventArgs e)
         {
@@ -104,6 +131,13 @@ namespace Kurs
         {
             fillColor.B = (byte)e.NewValue;
             B.Text = fillColor.B.ToString();
+            Hex.Text = fillColor.ToString();
+            Example.Fill = FillColor;
+        }
+        private void Slider_A_ValueChanged(Object sender, RoutedPropertyChangedEventArgs<Double> e)
+        {
+            fillColor.A = (byte)e.NewValue;
+            A.Text = fillColor.A.ToString();
             Hex.Text = fillColor.ToString();
             Example.Fill = FillColor;
         }

@@ -17,6 +17,7 @@ namespace Kurs
         bool saved = true;
         Key firstPressed = Key.None;
         Point rightMOuseBotton;
+        object CurObject;
         Graph graph = new Graph();
         Queue<Node> nodes = new Queue<Node>();
         Dictionary<int, Action<object>> MainOperations;
@@ -86,6 +87,10 @@ namespace Kurs
             border.ReleaseMouseCapture();
             tbtest.Text = CurrMod.ToString(); //test
             e.Handled = true;
+        }
+        private void Border_MouseRightButtonDown(Object sender, MouseButtonEventArgs e)
+        {
+                CurObject = sender;
         }
         private void ItemsControl_MouseDown(object sender, MouseButtonEventArgs e)
         {
@@ -204,7 +209,7 @@ namespace Kurs
         void RenameNode(object sender)
         {
             saved = false;
-            var node = (sender as Border)?.DataContext as Node;
+            Node node = (sender as Border)?.DataContext as Node;
             if (node == null)
                 return;
             if (nodes.Count > 0)
@@ -410,7 +415,8 @@ namespace Kurs
         private void Node_Click_Rename(Object sender, RoutedEventArgs e)
         {
             saved = false;
-            var node = (sender as MenuItem).DataContext as Node;
+            CurrMod = Mods[cnsRenameNode];
+            RenameNode(CurObject);
         }
         private void Node_Click_Connect(Object sender, RoutedEventArgs e)
         {

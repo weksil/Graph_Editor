@@ -6,6 +6,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.IO;
 using System.Text;
+using System.Windows.Media.Imaging;
+using System.Windows.Media;
 
 namespace Kurs
 {
@@ -48,7 +50,6 @@ namespace Kurs
         public MainWindow()
         {
             InitializeComponent();
-
             DataContext = graph;
             CurrMod = Mods[Key.None];
             MainOperations = new Dictionary<int, Action<object>>() {
@@ -71,7 +72,6 @@ namespace Kurs
             if (firstPressed == Key.None && CurrMod != Mods[cnsAddEdge] && CurrMod != Mods[cnsRenameNode])
                 CurrMod = Mods[Key.None];
             e.Handled = true;
-            tbtest.Text = CurrMod.ToString(); //test
         }
         private void Border_MouseMove(object sender, MouseEventArgs e)
         {
@@ -85,7 +85,6 @@ namespace Kurs
         {
             var border = sender as Border;
             border.ReleaseMouseCapture();
-            tbtest.Text = CurrMod.ToString(); //test
             e.Handled = true;
         }
         private void Border_MouseRightButtonDown(Object sender, MouseButtonEventArgs e)
@@ -107,7 +106,6 @@ namespace Kurs
                     tmp.InvertSelect();
                 }
             }
-            tbtest.Text = CurrMod.ToString(); //test
             e.Handled = true;
         }
         private void mainCanvas_MouseRightButtonDown(Object sender, MouseButtonEventArgs e)
@@ -131,7 +129,6 @@ namespace Kurs
                 CurrMod = Mods[Key.None];
             else if (nodes.Count == 0)
                 CurrMod = Mods[Key.None];
-            tbtest.Text = CurrMod.ToString(); //test
             e.Handled = true;
         }
         private void Window_KeyDown(Object sender, KeyEventArgs e)
@@ -164,7 +161,6 @@ namespace Kurs
                 firstPressed = Key.None;
                 Load();
             }
-            tbtest.Text = CurrMod.ToString(); //test
         }
         private void TextBox_KeyDown(Object sender, KeyEventArgs e)
         {
@@ -241,7 +237,6 @@ namespace Kurs
             tBlock.Visibility = Visibility.Visible;
             tBox.Visibility = Visibility.Hidden;
             CurrMod = Mods[Key.None];
-            tbtest.Text = CurrMod.ToString(); //test
         }
         void CreateNode(object sender)
         {
@@ -278,6 +273,7 @@ namespace Kurs
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
             dlg.InitialDirectory = path;
+            dlg.Filter = String.Format("Graph Files |*{0}", graph.FileExt);
             bool? res = dlg.ShowDialog();
             if (res == true)
             {
@@ -296,6 +292,7 @@ namespace Kurs
                 Directory.CreateDirectory(path);
             dlg.InitialDirectory = path;
             dlg.DefaultExt = graph.FileExt;
+            dlg.Filter = String.Format("Graph Files |*{0}", graph.FileExt);
             bool? res = dlg.ShowDialog();
             if (res == true)
             {
@@ -309,6 +306,42 @@ namespace Kurs
             graph.Save();
             saved = true;
         }
+        void SaveImage(string Extension)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            var path = Path.GetDirectoryName(Application.ResourceAssembly.Location) + graph.FilePath;
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
+            dlg.InitialDirectory = path;
+            dlg.DefaultExt = Extension;
+            dlg.Filter = String.Format("Image Files |*{0}| All files|*.*", Extension);
+            dlg.AddExtension = true;
+            bool? res = dlg.ShowDialog();
+            if (res == true)
+            {
+                int Height = (int)Container.ActualHeight;
+                int Width = (int)Container.ActualWidth;
+                RenderTargetBitmap bmp = new RenderTargetBitmap(Width, Height, 96, 96, PixelFormats.Pbgra32);
+                bmp.Render(Container);
+                string file = dlg.FileName;
+                BitmapEncoder encoder = null;
+                if (Extension == ".gif")
+                    encoder = new GifBitmapEncoder();
+                else if (Extension == ".png")
+                    encoder = new PngBitmapEncoder();
+                else if (Extension == ".jpg")
+                    encoder = new JpegBitmapEncoder();
+                else if (Extension == ".bmp")
+                    encoder = new BmpBitmapEncoder();
+                else if (Extension == ".tif")
+                    encoder = new TiffBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bmp));
+                using (Stream stm = File.Create(file))
+                {
+                    encoder.Save(stm);
+                }
+            }
+        }
         #endregion
         #region Menu
         private void MenuItem_Click_Load(Object sender, RoutedEventArgs e)
@@ -318,6 +351,26 @@ namespace Kurs
         private void MenuItem_Click_Save(Object sender, RoutedEventArgs e)
         {
             Save();
+        }
+        private void MenuItem_Click_Save_png(Object sender, RoutedEventArgs e)
+        {
+            SaveImage(".png");
+        }
+        private void MenuItem_Click_Save_gif(Object sender, RoutedEventArgs e)
+        {
+            SaveImage(".gif");
+        }
+        private void MenuItem_Click_Save_jpg(Object sender, RoutedEventArgs e)
+        {
+            SaveImage(".jpg");
+        }
+        private void MenuItem_Click_Save_bmp(Object sender, RoutedEventArgs e)
+        {
+            SaveImage(".bmp");
+        }
+        private void MenuItem_Click_Save_tif(Object sender, RoutedEventArgs e)
+        {
+            SaveImage(".tif");
         }
         private void MenuItem_Click_QuickSave(Object sender, RoutedEventArgs e)
         {
@@ -343,22 +396,18 @@ namespace Kurs
         {
             saved = false;
             CurrMod = Mods[cnsAddNode];
-            tbtest.Text = CurrMod.ToString(); //test
         }
         private void MenuItem_Click_Rename(Object sender, RoutedEventArgs e)
         {
             CurrMod = Mods[cnsRenameNode];
-            tbtest.Text = CurrMod.ToString(); //test
         }
         private void MenuItem_Click_Delete(Object sender, RoutedEventArgs e)
         {
             CurrMod = Mods[cnsRemoveNode];
-            tbtest.Text = CurrMod.ToString(); //test
         }
         private void MenuItem_Click_Connect(Object sender, RoutedEventArgs e)
         {
             CurrMod = Mods[cnsAddEdge];
-            tbtest.Text = CurrMod.ToString(); //test
         }
         private void MenuItem_Click_Node_Fill_Color(Object sender, RoutedEventArgs e)
         {

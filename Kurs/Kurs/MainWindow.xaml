@@ -12,8 +12,17 @@
         <ItemsPanelTemplate x:Key="cnv">
             <Canvas/>
         </ItemsPanelTemplate>
+        <ControlTemplate x:Key="SaveAs">
+            <MenuItem Header="Save as">
+                <MenuItem Header="Png" Click="MenuItem_Click_Save_png"></MenuItem>
+                <MenuItem Header="Gif" Click="MenuItem_Click_Save_gif"></MenuItem>
+                <MenuItem Header="Jpg" Click="MenuItem_Click_Save_jpg"></MenuItem>
+                <MenuItem Header="Bmp" Click="MenuItem_Click_Save_bmp"></MenuItem>
+                <MenuItem Header="Tiff" Click="MenuItem_Click_Save_tif"></MenuItem>
+            </MenuItem>
+        </ControlTemplate>
     </Window.Resources>
-    <Grid x:Name="mainGrid">
+    <Grid x:Name="mainGrid"  >
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
@@ -23,9 +32,7 @@
                 <MenuItem Header="New" Click="MenuItem_Click_New"/>
                 <MenuItem Header="Load" Click="MenuItem_Click_Load" InputGestureText="L"/>
                 <MenuItem Header="Save" Click="MenuItem_Click_Save" InputGestureText="S"/>
-                <MenuItem Header="Save as">
-                    <MenuItem Header="Png"></MenuItem>
-                </MenuItem>
+                <MenuItem Template="{StaticResource SaveAs}"/>
                 <Separator/>
                 <MenuItem Header="Quick Save" Click="MenuItem_Click_QuickSave" InputGestureText="LeftCtrl+S"/>
             </MenuItem>
@@ -48,81 +55,80 @@
                 </MenuItem>
             </MenuItem>
         </Menu>
-        <TextBlock x:Name="tbtest" Grid.Row="1"/>
-        <ItemsControl ItemsSource="{Binding Edges}" ItemsPanel="{StaticResource cnv}" Grid.Row="1">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Line X1="{Binding A.Centr.X}" Y1="{Binding A.Centr.Y}"
+        <Grid Grid.Row="1" x:Name="Container">
+            <ItemsControl ItemsSource="{Binding Edges}" ItemsPanel="{StaticResource cnv}" Background="#FFFF">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Line X1="{Binding A.Centr.X}" Y1="{Binding A.Centr.Y}"
                     X2="{Binding B.Centr.X}" Y2="{Binding B.Centr.Y}"
                     Stroke="{Binding FillColor}" StrokeThickness="2"/>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-        <ItemsControl ItemsSource="{Binding Nodes}" ItemsPanel="{StaticResource cnv}" x:Name="mainCanvas"
-                  Background="#1FFF"
-                  MouseLeftButtonDown="ItemsControl_MouseDown" Grid.Row="1"
-                      MouseRightButtonDown="mainCanvas_MouseRightButtonDown">
-            <ItemsControl.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Add Node" Click="Canvas_Click_Add_Node"/>
-                    <Separator/>
-                    <MenuItem Header="Undo" Click="MenuItem_Click_Undo"/>
-                    <MenuItem Header="Redo" Click="MenuItem_Click_Redo"/>
-                    <Separator/>
-                    <MenuItem Header="File">
-                        <MenuItem Header="New" Click="MenuItem_Click_New"/>
-                        <MenuItem Header="Load" Click="MenuItem_Click_Load" InputGestureText="L"/>
-                        <MenuItem Header="Save" Click="MenuItem_Click_Save" InputGestureText="S"/>
-                        <MenuItem Header="Save as">
-                            <MenuItem Header="Png"></MenuItem>
-                        </MenuItem>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding Nodes}" ItemsPanel="{StaticResource cnv}"
+                  Background="#0FFF" Grid.Row="1"
+                  MouseLeftButtonDown="ItemsControl_MouseDown"
+                  MouseRightButtonDown="mainCanvas_MouseRightButtonDown">
+                <ItemsControl.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Add Node" Click="Canvas_Click_Add_Node"/>
                         <Separator/>
-                        <MenuItem Header="Quick Save" Click="MenuItem_Click_QuickSave"/>
-                    </MenuItem>
-                    <MenuItem Header="Property">
-                        <MenuItem Header="Node">
-                            <MenuItem Header="Fill Color" Click="MenuItem_Click_Node_Fill_Color"/>
-                            <MenuItem Header="Border Color" Click="MenuItem_Click_Node_Border_Color"/>
+                        <MenuItem Header="Undo" Click="MenuItem_Click_Undo"/>
+                        <MenuItem Header="Redo" Click="MenuItem_Click_Redo"/>
+                        <Separator/>
+                        <MenuItem Header="File">
+                            <MenuItem Header="New" Click="MenuItem_Click_New"/>
+                            <MenuItem Header="Load" Click="MenuItem_Click_Load" InputGestureText="L"/>
+                            <MenuItem Header="Save" Click="MenuItem_Click_Save" InputGestureText="S"/>
+                            <MenuItem Template="{StaticResource SaveAs}"/>
+                            <Separator/>
+                            <MenuItem Header="Quick Save" Click="MenuItem_Click_QuickSave"/>
                         </MenuItem>
-                        <MenuItem Header="Edge">
-                            <MenuItem Header="Color" Click="MenuItem_Click_Edge_Color"/>
+                        <MenuItem Header="Property">
+                            <MenuItem Header="Node">
+                                <MenuItem Header="Fill Color" Click="MenuItem_Click_Node_Fill_Color"/>
+                                <MenuItem Header="Border Color" Click="MenuItem_Click_Node_Border_Color"/>
+                            </MenuItem>
+                            <MenuItem Header="Edge">
+                                <MenuItem Header="Color" Click="MenuItem_Click_Edge_Color"/>
+                            </MenuItem>
                         </MenuItem>
-                    </MenuItem>
-                </ContextMenu>
-            </ItemsControl.ContextMenu>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Border
+                    </ContextMenu>
+                </ItemsControl.ContextMenu>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border
                         MouseLeftButtonDown="Border_MouseDown"
                         MouseMove="Border_MouseMove"
                         MouseLeftButtonUp="Border_MouseUp"
                         MouseRightButtonDown="Border_MouseRightButtonDown"
                         CornerRadius="10" BorderThickness="2"
                         Background="{Binding FillColor}" BorderBrush="{Binding BorderColor}">
-                        <Border.BitmapEffect>
-                            <DropShadowBitmapEffect Opacity="{Binding SelectedOpacity}" />
-                        </Border.BitmapEffect>
-                        <Grid>
-                            <TextBlock Text="{Binding Text}" Margin="5" Visibility="Visible"/>
-                            <TextBox Text="{Binding Text}" Margin="5" Visibility="Hidden" Keyboard.KeyDown="TextBox_KeyDown"/>
-                        </Grid>
-                        <Border.RenderTransform>
-                            <TransformGroup>
-                                <TranslateTransform X="{Binding Pos.X}" Y="{Binding Pos.Y}"/>
-                            </TransformGroup>
-                        </Border.RenderTransform>
-                        <Border.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="Fill Color" Click="Node_Click_Fill"/>
-                                <MenuItem Header="Border Color" Click="Node_Click_Border"/>
-                                <MenuItem Header="Rename" Click="Node_Click_Rename"/>
-                                <MenuItem Header="Connect/Unconnect" Click="Node_Click_Connect"/>
-                                <MenuItem Header="Delete" Click="Node_Click_Delete"/>
-                            </ContextMenu>
-                        </Border.ContextMenu>
-                    </Border>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+                            <Border.BitmapEffect>
+                                <DropShadowBitmapEffect Opacity="{Binding SelectedOpacity}" />
+                            </Border.BitmapEffect>
+                            <Grid>
+                                <TextBlock Text="{Binding Text}" Margin="5" Visibility="Visible"/>
+                                <TextBox Text="{Binding Text}" Margin="5" Visibility="Hidden" Keyboard.KeyDown="TextBox_KeyDown"/>
+                            </Grid>
+                            <Border.RenderTransform>
+                                <TransformGroup>
+                                    <TranslateTransform X="{Binding Pos.X}" Y="{Binding Pos.Y}"/>
+                                </TransformGroup>
+                            </Border.RenderTransform>
+                            <Border.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Fill Color" Click="Node_Click_Fill"/>
+                                    <MenuItem Header="Border Color" Click="Node_Click_Border"/>
+                                    <MenuItem Header="Rename" Click="Node_Click_Rename"/>
+                                    <MenuItem Header="Connect/Unconnect" Click="Node_Click_Connect"/>
+                                    <MenuItem Header="Delete" Click="Node_Click_Delete"/>
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Grid>
     </Grid>
 </Window>

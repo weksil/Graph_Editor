@@ -24,23 +24,22 @@ namespace Kurs
         private Dictionary<int, Edge> edgesId = new Dictionary<int, Edge>();
         private int NodesCount;
         private int EdgesCount;
-        private string fileName = "Graph.xml";
+        private string fileName = "QuickSave.xml";
         private string filePath = @"Saves\";
         public string FileName { get { return fileName; } }
         public string FilePath { get { return '\\' + filePath; } }
         public string FileExt { get { return ".xml"; } }
-
-        public Color EdgeColor {
+        public Color EdgeColor
+        {
             get { return edgeColor; }
             set
             {
                 edgeColor = value;
-                foreach (var item in Edges)  item.ChangeColor();
-            } }
-
+                foreach (var item in Edges) item.ChangeColor();
+            }
+        }
         private List<BaseCommand> History;
         private int historyStep;
-
         public Graph()
         {
             Nodes = new ObservableCollection<Node>();
@@ -119,19 +118,14 @@ namespace Kurs
         }
         public void Save()
         {
-            Save(filePath, fileName);
+            Save(filePath+fileName);
         }
-        public void Save(string path, string name)
+        public void Save(string path)
         {
-            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(name))
-                return;
-            if (!Directory.Exists(path))
-                throw new NullReferenceException("missing directory");
-            Stream sw = File.Create(path + name);
+            Stream sw = File.Create(path);
             XmlSerializer ser = new XmlSerializer(this.GetType());
             ser.Serialize(sw, this);
             sw.Close();
-            fileName = name;
         }
         public Graph Load(Stream reader)
         {
@@ -156,10 +150,6 @@ namespace Kurs
                 }
             }
             return null;
-        }
-        public Graph Load()
-        {
-            return Load(filePath, fileName);
         }
         #region Logic
         public void CreateEdge(Node a, Node b)
@@ -379,6 +369,14 @@ namespace Kurs
             borderColor = newclr;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(borderColor)));
         }
+        public Color GetFillColor()
+        {
+            return fillColor;
+        }
+        public Color GetBorderColor()
+        {
+            return borderColor;
+        }
         public static Node Create(Point position, string text, int id)
         {
             Node res = new Node();
@@ -424,7 +422,7 @@ namespace Kurs
             reader.ReadEndElement();
 
             var serclr = new XmlSerializer(borderColor.GetType());
-            borderColor =  (Color)serclr.Deserialize(reader);
+            borderColor = (Color)serclr.Deserialize(reader);
             fillColor = (Color)serclr.Deserialize(reader);
 
             reader.ReadEndElement();
@@ -475,7 +473,7 @@ namespace Kurs
         }
     }
     [Serializable()]
-    public class Edge: INotifyPropertyChanged
+    public class Edge : INotifyPropertyChanged
     {
 
         public Node B { get { return parent.Find(b); } }

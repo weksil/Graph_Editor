@@ -21,32 +21,32 @@
         <Menu Grid.Row="0">
             <MenuItem Header="File">
                 <MenuItem Header="New" Click="MenuItem_Click_New"/>
-                <MenuItem Header="Load" Click="MenuItem_Click_Load"/>
-                <MenuItem Header="Save" Click="MenuItem_Click_Save"/>
+                <MenuItem Header="Load" Click="MenuItem_Click_Load" InputGestureText="L"/>
+                <MenuItem Header="Save" Click="MenuItem_Click_Save" InputGestureText="S"/>
                 <MenuItem Header="Save as">
                     <MenuItem Header="Png"></MenuItem>
                 </MenuItem>
+                <Separator/>
+                <MenuItem Header="Quick Save" Click="MenuItem_Click_QuickSave" InputGestureText="LeftCtrl+S"/>
             </MenuItem>
             <MenuItem Header="Edit">
-                <MenuItem Header="Undo" Click="MenuItem_Click_Undo"/>
-                <MenuItem Header="Redo" Click="MenuItem_Click_Redo"/>
-                <Separator></Separator>
-                <MenuItem Header="Add" Click="MenuItem_Click_Add"/>
-                <MenuItem Header="Delete" Click="MenuItem_Click_Delete"/>
-                <MenuItem Header="Rename" Click="MenuItem_Click_Rename"/>
-                <MenuItem Header="Connect" Click="MenuItem_Click_Connect"/>
+                <MenuItem Header="Undo" Click="MenuItem_Click_Undo" InputGestureText="LeftCtrl+Z"/>
+                <MenuItem Header="Redo" Click="MenuItem_Click_Redo" InputGestureText="LeftCtrl+Y"/>
+                <Separator/>
+                <MenuItem Header="Add" Click="MenuItem_Click_Add" InputGestureText="C+LeftMouseBtn"/>
+                <MenuItem Header="Delete" Click="MenuItem_Click_Delete" InputGestureText="D+LeftMouseBtn"/>
+                <MenuItem Header="Rename" Click="MenuItem_Click_Rename" InputGestureText="R+LeftMouseBtn"/>
+                <MenuItem Header="Connect" Click="MenuItem_Click_Connect"  InputGestureText="E+LeftMouseBtn"/>
             </MenuItem>
             <MenuItem Header="Property">
                 <MenuItem Header="Node">
                     <MenuItem Header="Fill Color" Click="MenuItem_Click_Node_Fill_Color"/>
                     <MenuItem Header="Border Color" Click="MenuItem_Click_Node_Border_Color"/>
                 </MenuItem>
-                <Separator></Separator>
                 <MenuItem Header="Edge">
                     <MenuItem Header="Color" Click="MenuItem_Click_Edge_Color"/>
                 </MenuItem>
             </MenuItem>
-            <MenuItem Header="?" Click="MenuItem_Click_Help"/>
         </Menu>
         <TextBlock x:Name="tbtest" Grid.Row="1"/>
         <ItemsControl ItemsSource="{Binding Edges}" ItemsPanel="{StaticResource cnv}" Grid.Row="1">
@@ -60,7 +60,36 @@
         </ItemsControl>
         <ItemsControl ItemsSource="{Binding Nodes}" ItemsPanel="{StaticResource cnv}" x:Name="mainCanvas"
                   Background="#1FFF"
-                  MouseLeftButtonDown="ItemsControl_MouseDown" Grid.Row="1">
+                  MouseLeftButtonDown="ItemsControl_MouseDown" Grid.Row="1"
+                      MouseRightButtonDown="mainCanvas_MouseRightButtonDown">
+            <ItemsControl.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Add Node" Click="Canvas_Click_Add_Node"/>
+                    <Separator/>
+                    <MenuItem Header="Undo" Click="MenuItem_Click_Undo"/>
+                    <MenuItem Header="Redo" Click="MenuItem_Click_Redo"/>
+                    <Separator/>
+                    <MenuItem Header="File">
+                        <MenuItem Header="New" Click="MenuItem_Click_New"/>
+                        <MenuItem Header="Load" Click="MenuItem_Click_Load" InputGestureText="L"/>
+                        <MenuItem Header="Save" Click="MenuItem_Click_Save" InputGestureText="S"/>
+                        <MenuItem Header="Save as">
+                            <MenuItem Header="Png"></MenuItem>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Quick Save" Click="MenuItem_Click_QuickSave"/>
+                    </MenuItem>
+                    <MenuItem Header="Property">
+                        <MenuItem Header="Node">
+                            <MenuItem Header="Fill Color" Click="MenuItem_Click_Node_Fill_Color"/>
+                            <MenuItem Header="Border Color" Click="MenuItem_Click_Node_Border_Color"/>
+                        </MenuItem>
+                        <MenuItem Header="Edge">
+                            <MenuItem Header="Color" Click="MenuItem_Click_Edge_Color"/>
+                        </MenuItem>
+                    </MenuItem>
+                </ContextMenu>
+            </ItemsControl.ContextMenu>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <Border
@@ -81,6 +110,15 @@
                                 <TranslateTransform X="{Binding Pos.X}" Y="{Binding Pos.Y}"/>
                             </TransformGroup>
                         </Border.RenderTransform>
+                        <Border.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Fill Color" Click="Node_Click_Fill"/>
+                                <MenuItem Header="Border Color" Click="Node_Click_Border"/>
+                                <MenuItem Header="Rename" Click="Node_Click_Rename"/>
+                                <MenuItem Header="Connect/Unconnect" Click="Node_Click_Connect"/>
+                                <MenuItem Header="Delete" Click="Node_Click_Delete"/>
+                            </ContextMenu>
+                        </Border.ContextMenu>
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

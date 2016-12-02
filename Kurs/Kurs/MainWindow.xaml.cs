@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.IO;
+using System.Text;
 
 namespace Kurs
 {
@@ -15,6 +16,7 @@ namespace Kurs
         int CurrMod;
         bool saved = true;
         Key firstPressed = Key.None;
+        Point rightMOuseBotton;
         Graph graph = new Graph();
         Queue<Node> nodes = new Queue<Node>();
         Dictionary<int, Action<object>> MainOperations;
@@ -33,14 +35,14 @@ namespace Kurs
             };
 
         // Constants
-        const Key cnsAddNode = Key.C;
-        const Key cnsAddEdge = Key.E;
-        const Key cnsRemoveNode = Key.D;
-        const Key cnsRenameNode = Key.R;
-        const Key cnsUndoKey = Key.Z;
-        const Key cnsRedoKey = Key.Y;
-        const Key cnsLoadKey = Key.L;
-        const Key cnsSaveKey = Key.S;
+        public const Key cnsAddNode = Key.C;
+        public const Key cnsAddEdge = Key.E;
+        public const Key cnsRemoveNode = Key.D;
+        public const Key cnsRenameNode = Key.R;
+        public const Key cnsUndoKey = Key.Z;
+        public const Key cnsRedoKey = Key.Y;
+        public const Key cnsLoadKey = Key.L;
+        public const Key cnsSaveKey = Key.S;
         #endregion
         public MainWindow()
         {
@@ -65,7 +67,7 @@ namespace Kurs
             }
             if (CurrMod == Mods[Key.None])
                 border.CaptureMouse();
-            if (firstPressed == Key.None && CurrMod != Mods[cnsAddEdge])
+            if (firstPressed == Key.None && CurrMod != Mods[cnsAddEdge] && CurrMod != Mods[cnsRenameNode])
                 CurrMod = Mods[Key.None];
             e.Handled = true;
             tbtest.Text = CurrMod.ToString(); //test
@@ -103,6 +105,10 @@ namespace Kurs
             tbtest.Text = CurrMod.ToString(); //test
             e.Handled = true;
         }
+        private void mainCanvas_MouseRightButtonDown(Object sender, MouseButtonEventArgs e)
+        {
+            rightMOuseBotton = e.GetPosition(this);
+        }
         private void Window_KeyUp(Object sender, KeyEventArgs e)
         {
 
@@ -136,6 +142,10 @@ namespace Kurs
                 saved = false;
                 graph.Redo();
             }
+            if (e.Key == cnsSaveKey && Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                QuickSave();
+            }
             if (CurrMod == Mods[Key.None] && Keyboard.Modifiers == ModifierKeys.None)
                 if (Mods.ContainsKey(firstPressed))
                     CurrMod = Mods[firstPressed];
@@ -160,27 +170,20 @@ namespace Kurs
         }
         #endregion
         #region Operations
-        #region LeftMouseDown
         void CreateDelEdge(object sender)
         {
             saved = false;
-            var border = (sender as Border);
-
-            //if (firstPressed == Key.None) CurrMod = Mods[Key.None];
-            if (border == null) return;
-
-            var node = (sender as Border)?.DataContext as Node;
+            Node node = sender as Node;
             if (node == null)
-                return;
+            {
+                var border = (sender as Border);
+                if (border == null) return;
+                node = (sender as Border)?.DataContext as Node;
+                if (node == null) return;
+            }
             node.InvertSelect();
-            if (node.Selected)
-            {
-                nodes.Enqueue(node);
-            }
-            else
-            {
-                nodes.Dequeue();
-            }
+            if (node.Selected) nodes.Enqueue(node);
+            else nodes.Dequeue();
             if (nodes.Count == 2)
             {
                 var lastNode = nodes.Dequeue();
@@ -190,15 +193,12 @@ namespace Kurs
         }
         void DelNode(object sender)
         {
+            if (firstPressed == Key.None) CurrMod = Mods[Key.None];
             saved = false;
             var border = (sender as Border);
-
-            if (firstPressed == Key.None) CurrMod = Mods[Key.None];
             if (border == null) return;
-
             var node = (sender as Border).DataContext as Node;
-            if (node == null)
-                return;
+            if (node == null) return;
             graph.RemoveNode(node);
         }
         void RenameNode(object sender)
@@ -241,7 +241,11 @@ namespace Kurs
         void CreateNode(object sender)
         {
             saved = false;
-            var curpos = (sender as MouseButtonEventArgs).GetPosition(this);
+            Point curpos;
+            if (sender as MouseButtonEventArgs != null)
+                curpos = (sender as MouseButtonEventArgs).GetPosition(this);
+            else
+                curpos = (Point)sender;
             curpos.Y -= (int)mainGrid.RowDefinitions[0].ActualHeight + 11;
             graph.AddNode(new Point(0, 0));
             graph.Nodes[graph.Nodes.Count - 1].Move(curpos);
@@ -261,10 +265,6 @@ namespace Kurs
                 node.Move(curPos);
             }
         }
-        #endregion
-        #region RightMouseDown
-
-        #endregion
         void Load()
         {
             Save();
@@ -286,19 +286,23 @@ namespace Kurs
         {
             if (saved) return;
             SaveFileDialog dlg = new SaveFileDialog();
-            dlg.FileName = graph.FileName;
             var path = Path.GetDirectoryName(Application.ResourceAssembly.Location) + graph.FilePath;
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
             dlg.InitialDirectory = path;
             dlg.DefaultExt = graph.FileExt;
-
             bool? res = dlg.ShowDialog();
             if (res == true)
             {
-                graph.Save(dlg.InitialDirectory, dlg.SafeFileName);
+                graph.Save(dlg.FileName);
                 saved = true;
             }
+        }
+        void QuickSave()
+        {
+            if (saved) return;
+            graph.Save();
+            saved = true;
         }
         #endregion
         #region Menu
@@ -309,6 +313,10 @@ namespace Kurs
         private void MenuItem_Click_Save(Object sender, RoutedEventArgs e)
         {
             Save();
+        }
+        private void MenuItem_Click_QuickSave(Object sender, RoutedEventArgs e)
+        {
+            QuickSave();
         }
         private void MenuItem_Click_New(Object sender, RoutedEventArgs e)
         {
@@ -349,6 +357,7 @@ namespace Kurs
         }
         private void MenuItem_Click_Node_Fill_Color(Object sender, RoutedEventArgs e)
         {
+            saved = false;
             var dlg = new ColorDialog();
             dlg.SetColor(graph.FillColor);
             if (dlg.ShowDialog() == true)
@@ -358,6 +367,7 @@ namespace Kurs
         }
         private void MenuItem_Click_Node_Border_Color(Object sender, RoutedEventArgs e)
         {
+            saved = false;
             var dlg = new ColorDialog();
             dlg.SetColor(graph.BorderColor);
             if (dlg.ShowDialog() == true)
@@ -367,6 +377,7 @@ namespace Kurs
         }
         private void MenuItem_Click_Edge_Color(Object sender, RoutedEventArgs e)
         {
+            saved = false;
             var dlg = new ColorDialog();
             dlg.SetColor(graph.EdgeColor);
             if (dlg.ShowDialog() == true)
@@ -374,9 +385,49 @@ namespace Kurs
                 graph.EdgeColor = dlg.fillColor;
             }
         }
-        private void MenuItem_Click_Help(Object sender, RoutedEventArgs e)
+        private void Node_Click_Fill(Object sender, RoutedEventArgs e)
         {
-            //to do
+            saved = false;
+            var dlg = new ColorDialog();
+            var node = (sender as MenuItem).DataContext as Node;
+            dlg.SetColor(node.GetFillColor());
+            if (dlg.ShowDialog() == true)
+            {
+                node.SetFillColor(dlg.fillColor);
+            }
+        }
+        private void Node_Click_Border(Object sender, RoutedEventArgs e)
+        {
+            saved = false;
+            var dlg = new ColorDialog();
+            var node = (sender as MenuItem).DataContext as Node;
+            dlg.SetColor(node.GetBorderColor());
+            if (dlg.ShowDialog() == true)
+            {
+                node.SetBorderColor(dlg.fillColor);
+            }
+        }
+        private void Node_Click_Rename(Object sender, RoutedEventArgs e)
+        {
+            saved = false;
+            var node = (sender as MenuItem).DataContext as Node;
+        }
+        private void Node_Click_Connect(Object sender, RoutedEventArgs e)
+        {
+            saved = false;
+            var node = (sender as MenuItem).DataContext as Node;
+            CurrMod = Mods[cnsAddEdge];
+            CreateDelEdge(node);
+        }
+        private void Node_Click_Delete(Object sender, RoutedEventArgs e)
+        {
+            saved = false;
+            var node = (sender as MenuItem).DataContext as Node;
+            graph.DeleteNode(node);
+        }
+        private void Canvas_Click_Add_Node(Object sender, RoutedEventArgs e)
+        {
+            CreateNode(rightMOuseBotton);
         }
         #endregion
     }

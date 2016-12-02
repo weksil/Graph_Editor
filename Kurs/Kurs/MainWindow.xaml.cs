@@ -248,7 +248,11 @@ namespace Kurs
                 curpos = (Point)sender;
             curpos.Y -= (int)mainGrid.RowDefinitions[0].ActualHeight + 11;
             graph.AddNode(new Point(0, 0));
-            graph.Nodes[graph.Nodes.Count - 1].Move(curpos);
+            var node = graph.Nodes[graph.Nodes.Count - 1];
+            node.Move(curpos);
+            curpos.X += 20;
+            curpos.Y += 10;
+            node.SetCentr(curpos);
         }
         void MoveNode(object sender, Point curPos)
         {

@@ -398,11 +398,10 @@ namespace Kurs
         {
             if (reader.IsEmptyElement) return;
             reader.Read();
-            var pathSerializer = new XmlSerializer(typeof(Entry[]));
+
+            var pathSerializer = new XmlSerializer(typeof(SerializableDictionary<int, int>));
             reader.ReadStartElement();
-            reader.ReadStartElement();
-            Path = SerializableDictionary<int, int>.Create(pathSerializer.Deserialize(reader) as Entry[]);
-            reader.ReadEndElement();
+            Path = pathSerializer.Deserialize(reader) as SerializableDictionary<int, int>;
             reader.ReadEndElement();
 
             id = reader.ReadElementContentAsInt();

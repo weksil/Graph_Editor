@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Kurs"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525"
+        Title="Graph editor" Height="350" Width="525"
         Keyboard.KeyUp="Window_KeyUp"
         Keyboard.KeyDown="Window_KeyDown">
     <Window.Resources>
@@ -99,9 +99,9 @@
                     <DataTemplate>
                         <Border
                         MouseLeftButtonDown="Border_MouseDown"
+                        MouseRightButtonDown="Border_MouseRightButtonDown"
                         MouseMove="Border_MouseMove"
                         MouseLeftButtonUp="Border_MouseUp"
-                        MouseRightButtonDown="Border_MouseRightButtonDown"
                         CornerRadius="10" BorderThickness="2"
                         Background="{Binding FillColor}" BorderBrush="{Binding BorderColor}">
                             <Border.BitmapEffect>

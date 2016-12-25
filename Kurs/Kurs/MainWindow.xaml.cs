@@ -15,11 +15,10 @@ namespace Kurs
     {
         #region Variables
         // Private Variables
-        int CurrMod;
+        int currMod;
         bool saved = true;
-        Key firstPressed = Key.None;
+        Border curNodeBorder;
         Point rightMOuseBotton;
-        object CurObject;
         Graph graph = new Graph();
         Queue<Node> nodes = new Queue<Node>();
         Dictionary<int, Action<object>> MainOperations;
@@ -27,7 +26,7 @@ namespace Kurs
         TextBlock tBlock;
         TextBox tBox;
         #endregion
-
+        Key firstPressed = Key.None;
         Dictionary<Key, int> Mods = new Dictionary<Key, int>()
             {
             {Key.None,0 },
@@ -36,7 +35,6 @@ namespace Kurs
             {cnsRemoveNode,3 },
             {cnsRenameNode,4 }
             };
-
         // Constants
         public const Key cnsAddNode = Key.C;
         public const Key cnsAddEdge = Key.E;
@@ -51,7 +49,7 @@ namespace Kurs
         {
             InitializeComponent();
             DataContext = graph;
-            CurrMod = Mods[Key.None];
+            currMod = Mods[Key.None];
             MainOperations = new Dictionary<int, Action<object>>() {
                 { Mods[cnsAddEdge] , CreateDelEdge} ,
                 { Mods[cnsAddNode], CreateNode} ,
@@ -60,22 +58,26 @@ namespace Kurs
             };
         }
         #region Events
+        private void Border_MouseRightButtonDown(Object sender, MouseButtonEventArgs e)
+        {
+            curNodeBorder = sender as Border;
+        }
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
             var border = sender as Border;
-            if (CurrMod != Mods[Key.None] && CurrMod != Mods[cnsAddNode])
+            if (currMod != Mods[Key.None] && currMod != Mods[cnsAddNode])
             {
-                MainOperations[CurrMod].Invoke(sender);
+                MainOperations[currMod].Invoke(sender);
             }
-            if (CurrMod == Mods[Key.None])
+            if (currMod == Mods[Key.None])
                 border.CaptureMouse();
-            if (firstPressed == Key.None && CurrMod != Mods[cnsAddEdge] && CurrMod != Mods[cnsRenameNode])
-                CurrMod = Mods[Key.None];
+            if (firstPressed == Key.None && currMod != Mods[cnsAddEdge] && currMod != Mods[cnsRenameNode])
+                currMod = Mods[Key.None];
             e.Handled = true;
         }
         private void Border_MouseMove(object sender, MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && CurrMod != Mods[cnsRenameNode])
+            if (e.LeftButton == MouseButtonState.Pressed && currMod != Mods[cnsRenameNode])
             {
                 MoveNode(sender, e.GetPosition(this));
             }
@@ -87,19 +89,15 @@ namespace Kurs
             border.ReleaseMouseCapture();
             e.Handled = true;
         }
-        private void Border_MouseRightButtonDown(Object sender, MouseButtonEventArgs e)
-        {
-                CurObject = sender;
-        }
         private void ItemsControl_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (CurrMod != Mods[Key.None])
-                MainOperations[CurrMod].Invoke(e);
-            if (CurrMod == Mods[cnsRenameNode])
+            if (currMod != Mods[Key.None])
+                MainOperations[currMod].Invoke(e);
+            if (currMod == Mods[cnsRenameNode])
                 EndRename();
             if (firstPressed == Key.None)
             {
-                CurrMod = Mods[Key.None];
+                currMod = Mods[Key.None];
                 if (nodes.Count != 0)
                 {
                     var tmp = nodes.Dequeue();
@@ -115,9 +113,9 @@ namespace Kurs
         private void Window_KeyUp(Object sender, KeyEventArgs e)
         {
 
-            if (e.Key != firstPressed && CurrMod != Mods[cnsRenameNode]) return;
+            if (e.Key != firstPressed && currMod != Mods[cnsRenameNode]) return;
             firstPressed = Key.None;
-            if (e.Key == cnsAddEdge && CurrMod != Mods[cnsRenameNode])
+            if (e.Key == cnsAddEdge && currMod != Mods[cnsRenameNode])
             {
                 if (nodes.Count != 0)
                 {
@@ -125,15 +123,15 @@ namespace Kurs
                     tmp.InvertSelect();
                 }
             }
-            if (CurrMod != Mods[cnsRenameNode])
-                CurrMod = Mods[Key.None];
+            if (currMod != Mods[cnsRenameNode])
+                currMod = Mods[Key.None];
             else if (nodes.Count == 0)
-                CurrMod = Mods[Key.None];
+                currMod = Mods[Key.None];
             e.Handled = true;
         }
         private void Window_KeyDown(Object sender, KeyEventArgs e)
         {
-            if (CurrMod != Mods[cnsRenameNode] && firstPressed == Key.None) firstPressed = e.Key;
+            if (currMod != Mods[cnsRenameNode] && firstPressed == Key.None) firstPressed = e.Key;
             if (e.Key == cnsUndoKey && Keyboard.Modifiers == ModifierKeys.Control)
             {
                 saved = false;
@@ -148,9 +146,9 @@ namespace Kurs
             {
                 QuickSave();
             }
-            if (CurrMod == Mods[Key.None] && Keyboard.Modifiers == ModifierKeys.None)
+            if (currMod == Mods[Key.None] && Keyboard.Modifiers == ModifierKeys.None)
                 if (Mods.ContainsKey(firstPressed))
-                    CurrMod = Mods[firstPressed];
+                    currMod = Mods[firstPressed];
             if (firstPressed == cnsSaveKey)
             {
                 firstPressed = Key.None;
@@ -194,18 +192,20 @@ namespace Kurs
         }
         void DelNode(object sender)
         {
-            if (firstPressed == Key.None) CurrMod = Mods[Key.None];
+            if (firstPressed == Key.None) currMod = Mods[Key.None];
             saved = false;
-            var border = (sender as Border);
-            if (border == null) return;
-            var node = (sender as Border).DataContext as Node;
+            var node = (sender as Border)?.DataContext as Node;
             if (node == null) return;
             graph.RemoveNode(node);
         }
         void RenameNode(object sender)
         {
             saved = false;
-            Node node = (sender as Border)?.DataContext as Node;
+            Node node;
+            if (sender is Node)
+                node = sender as Node;
+            else
+                node = (sender as Border)?.DataContext as Node;
             if (node == null)
                 return;
             if (nodes.Count > 0)
@@ -214,19 +214,19 @@ namespace Kurs
                 return;
             }
             nodes.Enqueue(node);
-            var tmp = ((sender as Border).Child as Grid).Children;
+            var tmp = (curNodeBorder.Child as Grid).Children;
             tBlock = tmp[0] as TextBlock;
             tBox = tmp[1] as TextBox;
             tBlock.Visibility = Visibility.Hidden;
             tBox.Visibility = Visibility.Visible;
-            CurrMod = Mods[cnsRenameNode];
+            currMod = Mods[cnsRenameNode];
         }
         void EndRename()
         {
             saved = false;
             if (nodes.Count == 0)
             {
-                CurrMod = Mods[Key.None];
+                currMod = Mods[Key.None];
                 return;
             }
             var node = nodes.Dequeue();
@@ -236,7 +236,7 @@ namespace Kurs
             }
             tBlock.Visibility = Visibility.Visible;
             tBox.Visibility = Visibility.Hidden;
-            CurrMod = Mods[Key.None];
+            currMod = Mods[Key.None];
         }
         void CreateNode(object sender)
         {
@@ -399,19 +399,19 @@ namespace Kurs
         private void MenuItem_Click_Add(Object sender, RoutedEventArgs e)
         {
             saved = false;
-            CurrMod = Mods[cnsAddNode];
+            currMod = Mods[cnsAddNode];
         }
         private void MenuItem_Click_Rename(Object sender, RoutedEventArgs e)
         {
-            CurrMod = Mods[cnsRenameNode];
+            currMod = Mods[cnsRenameNode];
         }
         private void MenuItem_Click_Delete(Object sender, RoutedEventArgs e)
         {
-            CurrMod = Mods[cnsRemoveNode];
+            currMod = Mods[cnsRemoveNode];
         }
         private void MenuItem_Click_Connect(Object sender, RoutedEventArgs e)
         {
-            CurrMod = Mods[cnsAddEdge];
+            currMod = Mods[cnsAddEdge];
         }
         private void MenuItem_Click_Node_Fill_Color(Object sender, RoutedEventArgs e)
         {
@@ -420,7 +420,7 @@ namespace Kurs
             dlg.SetColor(graph.FillColor);
             if (dlg.ShowDialog() == true)
             {
-                graph.FillColor = dlg.fillColor;
+                graph.ChangeNodeBaseFillColor(dlg.fillColor);
             }
         }
         private void MenuItem_Click_Node_Border_Color(Object sender, RoutedEventArgs e)
@@ -430,7 +430,7 @@ namespace Kurs
             dlg.SetColor(graph.BorderColor);
             if (dlg.ShowDialog() == true)
             {
-                graph.BorderColor = dlg.fillColor;
+                graph.ChangeNodeBaseBorderColor(dlg.fillColor);
             }
         }
         private void MenuItem_Click_Edge_Color(Object sender, RoutedEventArgs e)
@@ -440,7 +440,7 @@ namespace Kurs
             dlg.SetColor(graph.EdgeColor);
             if (dlg.ShowDialog() == true)
             {
-                graph.EdgeColor = dlg.fillColor;
+                graph.ChangeEngeColor(dlg.fillColor);
             }
         }
         private void Node_Click_Fill(Object sender, RoutedEventArgs e)
@@ -451,7 +451,7 @@ namespace Kurs
             dlg.SetColor(node.GetFillColor());
             if (dlg.ShowDialog() == true)
             {
-                node.SetFillColor(dlg.fillColor);
+                graph.ChangeNodeFillColor(node, dlg.fillColor);
             }
         }
         private void Node_Click_Border(Object sender, RoutedEventArgs e)
@@ -462,27 +462,28 @@ namespace Kurs
             dlg.SetColor(node.GetBorderColor());
             if (dlg.ShowDialog() == true)
             {
-                node.SetBorderColor(dlg.fillColor);
+                graph.ChangeNodeFillColor(node, dlg.fillColor);
             }
         }
         private void Node_Click_Rename(Object sender, RoutedEventArgs e)
         {
             saved = false;
-            CurrMod = Mods[cnsRenameNode];
-            RenameNode(CurObject);
+            currMod = Mods[cnsRenameNode];
+            var node = (sender as MenuItem).DataContext as Node;
+            RenameNode((sender as MenuItem).DataContext as Node);
         }
         private void Node_Click_Connect(Object sender, RoutedEventArgs e)
         {
             saved = false;
             var node = (sender as MenuItem).DataContext as Node;
-            CurrMod = Mods[cnsAddEdge];
+            currMod = Mods[cnsAddEdge];
             CreateDelEdge(node);
         }
         private void Node_Click_Delete(Object sender, RoutedEventArgs e)
         {
             saved = false;
             var node = (sender as MenuItem).DataContext as Node;
-            graph.DeleteNode(node);
+            graph.RemoveNode(node);
         }
         private void Canvas_Click_Add_Node(Object sender, RoutedEventArgs e)
         {

@@ -12,7 +12,6 @@ using System.Windows.Media;
 
 namespace Kurs
 {
-    [Serializable()]
     public class Graph : IXmlSerializable
     {
         public ObservableCollection<Edge> Edges { get; }
@@ -20,12 +19,12 @@ namespace Kurs
         public Color BorderColor { get; set; }
         public Color FillColor { get; set; }
         private Color edgeColor;
-        private Dictionary<int, Node> nodesId = new Dictionary<int, Node>();
-        private Dictionary<int, Edge> edgesId = new Dictionary<int, Edge>();
+        private Dictionary<int, Node> nodesId;
+        private Dictionary<int, Edge> edgesId;
         private int NodesCount;
         private int EdgesCount;
-        private string fileName = "QuickSave.xml";
-        private string filePath = @"Saves\";
+        private string fileName;
+        private string filePath;
         public string FileName { get { return fileName; } }
         public string FilePath { get { return '\\' + filePath; } }
         public string FileExt { get { return ".xml"; } }
@@ -48,6 +47,10 @@ namespace Kurs
             BorderColor = Colors.Blue;
             FillColor = Colors.LightBlue;
             EdgeColor = Colors.Black;
+            nodesId = new Dictionary<int, Node>();
+            edgesId = new Dictionary<int, Edge>();
+            fileName = "QuickSave.xml";
+            filePath = @"Saves\";
         }
         public void Undo()
         {
@@ -116,9 +119,44 @@ namespace Kurs
             com.Execute();
             History.Add(com);
         }
+        public void ChangeNodeBaseFillColor(Color newColor)
+        {
+            NewOperation();
+            var com = ComNodeBaseFillColor.SetCommand(this, newColor);
+            com.Execute();
+            History.Add(com);
+        }
+        public void ChangeNodeBaseBorderColor(Color newColor)
+        {
+            NewOperation();
+            var com = ComNodeBaseBorderColor.SetCommand(this, newColor);
+            com.Execute();
+            History.Add(com);
+        }
+        public void ChangeNodeFillColor(Node node, Color newColor)
+        {
+            NewOperation();
+            var com = ComNodeFillColor.SetCommand(node, newColor);
+            com.Execute();
+            History.Add(com);
+        }
+        public void ChangeNodeBorderColor(Node node, Color newColor)
+        {
+            NewOperation();
+            var com = ComNodeBorderColor.SetCommand(node, newColor);
+            com.Execute();
+            History.Add(com);
+        }
+        public void ChangeEngeColor(Color newColor)
+        {
+            NewOperation();
+            var com = ComEdgeColor.SetCommand(this, newColor);
+            com.Execute();
+            History.Add(com);
+        }
         public void Save()
         {
-            Save(filePath+fileName);
+            Save(filePath + fileName);
         }
         public void Save(string path)
         {
@@ -309,7 +347,6 @@ namespace Kurs
         }
         #endregion
     }
-    [Serializable()]
     [XmlRoot(nameof(Node))]
     public class Node : INotifyPropertyChanged, IXmlSerializable
     {
@@ -324,7 +361,6 @@ namespace Kurs
         public string Text { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
         public SerializableDictionary<int, int> Path;
-        [field: NonSerialized()]
         private bool selected;
         public void Rename(string name)
         {
@@ -474,7 +510,7 @@ namespace Kurs
     [Serializable()]
     public class Edge : INotifyPropertyChanged
     {
-
+        public Node A { get { return parent.Find(a); } }
         public Node B { get { return parent.Find(b); } }
         [field: NonSerialized()]
         private int a;
@@ -482,13 +518,11 @@ namespace Kurs
         private int b;
         public Brush FillColor { get { return new SolidColorBrush(parent.EdgeColor); } }
         private Graph parent;
-
         public event PropertyChangedEventHandler PropertyChanged;
         public void ChangeColor()
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FillColor)));
         }
-        public Node A { get { return parent.Find(a); } }
         public int ID { get; set; }
         public static Edge Create(Node a, Node b, int id)
         {
@@ -517,7 +551,6 @@ namespace Kurs
     {
         void Execute();
         void Undo();
-
         void Redo();
     }
     class ComCreateNode : BaseCommand
@@ -628,15 +661,15 @@ namespace Kurs
         {
             _graph.CreateEdge(_node1, _node2);
         }
-        public void Undo()
-        {
-            if (_node1 == null) return;
-            _graph.DeleteEdge(_node1, _node2);
-        }
         public void Redo()
         {
-            if (_node1 == null) return;
+            if (_node1 == null || _node2 == null) return;
             _graph.CreateEdge(_node1, _node2);
+        }
+        public void Undo()
+        {
+            if (_node1 == null || _node2 == null) return;
+            _graph.DeleteEdge(_node1, _node2);
         }
     }
     class ComUnconnectNode : BaseCommand
@@ -658,13 +691,153 @@ namespace Kurs
         }
         public void Undo()
         {
-            if (_node1 == null) return;
+            if (_node1 == null || _node2 == null) return;
             _graph.CreateEdge(_node1, _node2);
         }
         public void Redo()
         {
-            if (_node1 == null) return;
+            if (_node1 == null || _node2 == null) return;
             _graph.DeleteEdge(_node1, _node2);
+        }
+    }
+    class ComNodeFillColor : BaseCommand
+    {
+        Node _node;
+        Color _newColor;
+        Color _oldColor;
+        public static ComNodeFillColor SetCommand(Node node, Color newColor)
+        {
+            var tmp = new ComNodeFillColor();
+            tmp._node = node;
+            tmp._oldColor = node.GetFillColor();
+            tmp._newColor = newColor;
+            return tmp;
+        }
+        public void Execute()
+        {
+            _node.SetFillColor(_newColor);
+        }
+        public void Undo()
+        {
+            if (_node == null) return;
+            _node.SetFillColor(_oldColor);
+        }
+        public void Redo()
+        {
+            if (_node == null) return;
+            _node.SetFillColor(_newColor);
+        }
+    }
+    class ComNodeBaseBorderColor : BaseCommand
+    {
+        Graph _curGraph;
+        Color _newColor;
+        Color _oldColor;
+        public static ComNodeBaseBorderColor SetCommand(Graph curGraph, Color newColor)
+        {
+            var tmp = new ComNodeBaseBorderColor();
+            tmp._curGraph = curGraph;
+            tmp._oldColor = curGraph.BorderColor;
+            tmp._newColor = newColor;
+            return tmp;
+        }
+        public void Execute()
+        {
+            _curGraph.BorderColor = _newColor;
+        }
+        public void Undo()
+        {
+            if (_curGraph == null) return;
+            _curGraph.BorderColor = _oldColor;
+        }
+        public void Redo()
+        {
+            if (_curGraph == null) return;
+            _curGraph.BorderColor = _newColor;
+        }
+    }
+    class ComNodeBaseFillColor : BaseCommand
+    {
+        Graph _curGraph;
+        Color _newColor;
+        Color _oldColor;
+        public static ComNodeBaseFillColor SetCommand(Graph curGraph, Color newColor)
+        {
+            var tmp = new ComNodeBaseFillColor();
+            tmp._curGraph = curGraph;
+            tmp._oldColor = curGraph.FillColor;
+            tmp._newColor = newColor;
+            return tmp;
+        }
+        public void Execute()
+        {
+            _curGraph.FillColor = _newColor;
+        }
+        public void Undo()
+        {
+            if (_curGraph == null) return;
+            _curGraph.FillColor = _oldColor;
+        }
+        public void Redo()
+        {
+            if (_curGraph == null) return;
+            _curGraph.FillColor = _newColor;
+        }
+    }
+    class ComNodeBorderColor : BaseCommand
+    {
+        Node _node;
+        Color _newColor;
+        Color _oldColor;
+        public static ComNodeBorderColor SetCommand(Node node, Color newColor)
+        {
+            var tmp = new ComNodeBorderColor();
+            tmp._node = node;
+            tmp._oldColor = node.GetFillColor();
+            tmp._newColor = newColor;
+            return tmp;
+        }
+        public void Execute()
+        {
+            _node.SetBorderColor(_newColor);
+        }
+        public void Redo()
+        {
+            if (_node == null) return;
+            _node.SetBorderColor(_newColor);
+        }
+        public void Undo()
+        {
+            if (_node == null) return;
+            _node.SetBorderColor(_oldColor);
+        }
+    }
+    class ComEdgeColor : BaseCommand
+    {
+        Graph _graph;
+        Color _newColor;
+        Color _oldColor;
+        public static ComEdgeColor SetCommand(Graph curgraph, Color newColor)
+        {
+            var tmp = new ComEdgeColor();
+            tmp._graph = curgraph;
+            tmp._oldColor = curgraph.EdgeColor;
+            tmp._newColor = newColor;
+            return tmp;
+        }
+        public void Execute()
+        {
+            _graph.EdgeColor = _newColor;
+        }
+        public void Undo()
+        {
+            if (_graph == null) return;
+            _graph.EdgeColor = _oldColor;
+        }
+        public void Redo()
+        {
+            if (_graph == null) return;
+            _graph.EdgeColor = _newColor;
         }
     }
     #endregion

@@ -12,7 +12,6 @@ namespace Kurs
     [XmlRoot("dictionary")]
     public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, IXmlSerializable
     {
-        private List<Entry> entries = new List<Entry>();
         public XmlSchema GetSchema()
         {
             return null;
@@ -29,10 +28,9 @@ namespace Kurs
             }
             reader.ReadEndElement();
         }
-
         public void WriteXml(XmlWriter writer)
         {
-            entries.Clear();
+            List<Entry> entries = new List<Entry>();
             foreach (var key in Keys)
             {
                 entries.Add(Entry.Create(key, this[key]));

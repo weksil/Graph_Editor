@@ -14,7 +14,6 @@ namespace Kurs
     public partial class MainWindow : Window
     {
         #region Variables
-        // Private Variables
         int currMod;
         bool saved = true;
         Border curNodeBorder;
@@ -36,14 +35,14 @@ namespace Kurs
             {cnsRenameNode,4 }
             };
         // Constants
-        public const Key cnsAddNode = Key.C;
-        public const Key cnsAddEdge = Key.E;
-        public const Key cnsRemoveNode = Key.D;
-        public const Key cnsRenameNode = Key.R;
-        public const Key cnsUndoKey = Key.Z;
-        public const Key cnsRedoKey = Key.Y;
-        public const Key cnsLoadKey = Key.L;
-        public const Key cnsSaveKey = Key.S;
+        const Key cnsAddNode = Key.C;
+        const Key cnsAddEdge = Key.E;
+        const Key cnsRemoveNode = Key.D;
+        const Key cnsRenameNode = Key.R;
+        const Key cnsUndoKey = Key.Z;
+        const Key cnsRedoKey = Key.Y;
+        const Key cnsLoadKey = Key.L;
+        const Key cnsSaveKey = Key.S;
         #endregion
         public MainWindow()
         {
@@ -56,6 +55,9 @@ namespace Kurs
                 { Mods[cnsRemoveNode] , DelNode} ,
                 { Mods[cnsRenameNode] , RenameNode}
             };
+            Tests tmp = new Tests();
+            tmp.StartLogicTest();
+            tmp.StartTimeTests();
         }
         #region Events
         private void Border_MouseRightButtonDown(Object sender, MouseButtonEventArgs e)
@@ -243,16 +245,14 @@ namespace Kurs
             saved = false;
             Point curpos;
             if (sender as MouseButtonEventArgs != null)
-                curpos = (sender as MouseButtonEventArgs).GetPosition(this);
+                curpos = (sender as MouseButtonEventArgs).GetPosition(Container);
             else
                 curpos = (Point)sender;
-            curpos.Y -= (int)mainGrid.RowDefinitions[0].ActualHeight + 11;
-            graph.AddNode(new Point(0, 0));
-            var node = graph.Nodes[graph.Nodes.Count - 1];
-            node.Move(curpos);
+            curpos.Y -= +11;
+            graph.AddNode(curpos);
             curpos.X += 20;
             curpos.Y += 10;
-            node.SetCentr(curpos);
+            graph.Nodes[graph.Nodes.Count - 1].SetCentr(curpos);
         }
         void MoveNode(object sender, Point curPos)
         {
@@ -448,7 +448,7 @@ namespace Kurs
             saved = false;
             var dlg = new ColorDialog();
             var node = (sender as MenuItem).DataContext as Node;
-            dlg.SetColor(node.GetFillColor());
+            dlg.SetColor(node.GetFillColor);
             if (dlg.ShowDialog() == true)
             {
                 graph.ChangeNodeFillColor(node, dlg.fillColor);
@@ -459,7 +459,7 @@ namespace Kurs
             saved = false;
             var dlg = new ColorDialog();
             var node = (sender as MenuItem).DataContext as Node;
-            dlg.SetColor(node.GetBorderColor());
+            dlg.SetColor(node.GetBorderColor);
             if (dlg.ShowDialog() == true)
             {
                 graph.ChangeNodeFillColor(node, dlg.fillColor);

@@ -21,10 +21,12 @@ namespace Kurs
         private Color edgeColor;
         private Dictionary<int, Node> nodesId;
         private Dictionary<int, Edge> edgesId;
-        private int NodesCount;
-        private int EdgesCount;
+        private int nodesCount;
+        private int edgesCount;
         private string fileName;
         private string filePath;
+        private List<BaseCommand> history;
+        private int historyStep;
         public string FileName { get { return fileName; } }
         public string FilePath { get { return '\\' + filePath; } }
         public string FileExt { get { return ".xml"; } }
@@ -37,13 +39,11 @@ namespace Kurs
                 foreach (var item in Edges) item.ChangeColor();
             }
         }
-        private List<BaseCommand> History;
-        private int historyStep;
         public Graph()
         {
             Nodes = new ObservableCollection<Node>();
             Edges = new ObservableCollection<Edge>();
-            History = new List<BaseCommand>();
+            history = new List<BaseCommand>();
             BorderColor = Colors.Blue;
             FillColor = Colors.LightBlue;
             EdgeColor = Colors.Black;
@@ -54,20 +54,20 @@ namespace Kurs
         }
         public void Undo()
         {
-            if (History.Count == 0 || (History.Count - historyStep - 1) < 0) return;
-            History[History.Count - historyStep - 1].Undo();
+            if (history.Count == 0 || (history.Count - historyStep - 1) < 0) return;
+            history[history.Count - historyStep - 1].Undo();
             historyStep++;
         }
         public void Redo()
         {
-            if (History.Count == 0 || historyStep == 0) return;
-            History[History.Count - historyStep].Redo();
+            if (history.Count == 0 || historyStep == 0) return;
+            history[history.Count - historyStep].Redo();
             historyStep--;
         }
         private void NewOperation()
         {
             if (historyStep == 0) return;
-            History.RemoveRange(History.Count - historyStep, historyStep);
+            history.RemoveRange(history.Count - historyStep, historyStep);
             historyStep = 0;
         }
         public void AddNode(Point pos, string text)
@@ -75,7 +75,7 @@ namespace Kurs
             NewOperation();
             var add = ComCreateNode.SetCommand(this, pos, text);
             add.Execute();
-            History.Add(add);
+            history.Add(add);
         }
         public void AddNode(Point pos)
         {
@@ -86,7 +86,7 @@ namespace Kurs
             NewOperation();
             var com = ComDelNode.SetCommand(this, node);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void RenameNode(Node node, string text)
         {
@@ -94,7 +94,7 @@ namespace Kurs
             NewOperation();
             var com = ComRenameNode.SetCommand(node, text);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void ConnectNodes(Node node1, Node node2)
         {
@@ -106,7 +106,7 @@ namespace Kurs
             NewOperation();
             var com = ComConnectNode.SetCommand(this, node1, node2);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void ConnectNodes(int node1_ID, int node2_ID)
         {
@@ -117,42 +117,42 @@ namespace Kurs
             NewOperation();
             var com = ComUnconnectNode.SetCommand(this, node1, node2);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void ChangeNodeBaseFillColor(Color newColor)
         {
             NewOperation();
             var com = ComNodeBaseFillColor.SetCommand(this, newColor);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void ChangeNodeBaseBorderColor(Color newColor)
         {
             NewOperation();
             var com = ComNodeBaseBorderColor.SetCommand(this, newColor);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void ChangeNodeFillColor(Node node, Color newColor)
         {
             NewOperation();
             var com = ComNodeFillColor.SetCommand(node, newColor);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void ChangeNodeBorderColor(Node node, Color newColor)
         {
             NewOperation();
             var com = ComNodeBorderColor.SetCommand(node, newColor);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void ChangeEngeColor(Color newColor)
         {
             NewOperation();
             var com = ComEdgeColor.SetCommand(this, newColor);
             com.Execute();
-            History.Add(com);
+            history.Add(com);
         }
         public void Save()
         {
@@ -192,22 +192,22 @@ namespace Kurs
         #region Logic
         public void CreateEdge(Node a, Node b)
         {
-            var res = Edge.Create(a, b, EdgesCount);
+            var res = Edge.Create(a, b, edgesCount);
             res.SetParent(this);
             Edges.Add(res);
             edgesId.Add(res.ID, res);
             a.Path.Add(b.ID, res.ID);
             b.Path.Add(a.ID, res.ID);
-            EdgesCount++;
+            edgesCount++;
         }
         public void CreateNode(Point pos)
         {
-            Node tmp = Node.Create(pos, NodesCount);
+            Node tmp = Node.Create(pos, nodesCount);
             tmp.SetFillColor(FillColor);
             tmp.SetBorderColor(BorderColor);
             Nodes.Add(tmp);
             nodesId.Add(tmp.ID, tmp);
-            NodesCount++;
+            nodesCount++;
         }
         public void CreateNode(Node node)
         {
@@ -215,18 +215,17 @@ namespace Kurs
             nodesId.Add(node.ID, node);
             foreach (var item in node.Path)
             {
-
                 nodesId[item.Key].Path.Add(node.ID, item.Value);
                 Edges.Add(edgesId[item.Value]);
             }
-            NodesCount++;
+            nodesCount++;
         }
         public void CreateNode(Point pos, string text)
         {
-            Node tmp = Node.Create(pos, text, NodesCount);
+            Node tmp = Node.Create(pos, text, nodesCount);
             Nodes.Add(tmp);
             nodesId.Add(tmp.ID, tmp);
-            NodesCount++;
+            nodesCount++;
         }
         public Edge FindEdge(Node node1, Node node2)
         {
@@ -243,13 +242,11 @@ namespace Kurs
                 Edges.Remove(edgesId[item.Value]);
             }
             nodesId.Remove(node.ID);
-
         }
         public void DeleteEdge(Node node1, Node node2)
         {
             Edge edge = FindEdge(node1, node2);
-            if (edge == null)
-                return;
+            if (edge == null) return;
             edge.A.Path.Remove(edge.B.ID);
             edge.B.Path.Remove(edge.A.ID);
             Edges.Remove(edge);
@@ -277,8 +274,8 @@ namespace Kurs
             var edgesCount = reader.ReadElementContentAsInt();
             var nodesCount = reader.ReadElementContentAsInt();
 
-            EdgesCount = reader.ReadElementContentAsInt();
-            NodesCount = reader.ReadElementContentAsInt();
+            this.edgesCount = reader.ReadElementContentAsInt();
+            this.nodesCount = reader.ReadElementContentAsInt();
 
             var serclr = new XmlSerializer(BorderColor.GetType());
             BorderColor = (Color)serclr.Deserialize(reader);
@@ -327,12 +324,12 @@ namespace Kurs
             writer.WriteValue(Nodes.Count);
             writer.WriteEndElement();
 
-            writer.WriteStartElement(nameof(EdgesCount));
-            writer.WriteValue(EdgesCount);
+            writer.WriteStartElement(nameof(edgesCount));
+            writer.WriteValue(edgesCount);
             writer.WriteEndElement();
 
-            writer.WriteStartElement(nameof(NodesCount));
-            writer.WriteValue(NodesCount);
+            writer.WriteStartElement(nameof(nodesCount));
+            writer.WriteValue(nodesCount);
             writer.WriteEndElement();
 
             var serclr = new XmlSerializer(BorderColor.GetType());
@@ -347,7 +344,6 @@ namespace Kurs
         }
         #endregion
     }
-    [XmlRoot(nameof(Node))]
     public class Node : INotifyPropertyChanged, IXmlSerializable
     {
         private Point pos;
@@ -355,18 +351,14 @@ namespace Kurs
         private int id;
         private Color borderColor;
         private Color fillColor;
+        private bool selected;
         public Brush BorderColor { get { return new SolidColorBrush(borderColor); } }
         public Brush FillColor { get { return new SolidColorBrush(fillColor); } }
         public int ID { get { return id; } }
         public string Text { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
         public SerializableDictionary<int, int> Path;
-        private bool selected;
-        public void Rename(string name)
-        {
-            Text = name;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Text)));
-        }
+        public bool Selected { get { return selected; } }
         public Point Pos
         {
             get { return pos; }
@@ -375,10 +367,13 @@ namespace Kurs
         {
             get { return centr; }
         }
-        public bool Selected { get { return selected; } }
-        public double SelectedOpacity
+        public Color GetFillColor { get { return fillColor; } }
+        public Color GetBorderColor { get { return borderColor; } }
+        public double SelectedOpacity { get { return selected ? 1 : 0; } }
+        public void Rename(string name)
         {
-            get { return selected ? 1 : 0; }
+            Text = name;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Text)));
         }
         public void InvertSelect()
         {
@@ -405,14 +400,6 @@ namespace Kurs
             borderColor = newclr;
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(borderColor)));
         }
-        public Color GetFillColor()
-        {
-            return fillColor;
-        }
-        public Color GetBorderColor()
-        {
-            return borderColor;
-        }
         public static Node Create(Point position, string text, int id)
         {
             Node res = new Node();
@@ -422,9 +409,9 @@ namespace Kurs
             res.id = id;
             return res;
         }
-        public static Node Create(Point position, int numb)
+        public static Node Create(Point position, int id)
         {
-            return Create(position, String.Format("Node{0}", numb), numb);
+            return Create(position, String.Format("Node{0}", id), id);
         }
         public XmlSchema GetSchema()
         {
@@ -709,7 +696,7 @@ namespace Kurs
         {
             var tmp = new ComNodeFillColor();
             tmp._node = node;
-            tmp._oldColor = node.GetFillColor();
+            tmp._oldColor = node.GetFillColor;
             tmp._newColor = newColor;
             return tmp;
         }
@@ -793,7 +780,7 @@ namespace Kurs
         {
             var tmp = new ComNodeBorderColor();
             tmp._node = node;
-            tmp._oldColor = node.GetFillColor();
+            tmp._oldColor = node.GetFillColor;
             tmp._newColor = newColor;
             return tmp;
         }

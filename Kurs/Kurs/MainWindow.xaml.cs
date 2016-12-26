@@ -66,13 +66,13 @@ namespace Kurs
         }
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            var border = sender as Border;
+            curNodeBorder = sender as Border;
             if (currMod != Mods[Key.None] && currMod != Mods[cnsAddNode])
             {
                 MainOperations[currMod].Invoke(sender);
             }
             if (currMod == Mods[Key.None])
-                border.CaptureMouse();
+                curNodeBorder.CaptureMouse();
             if (firstPressed == Key.None && currMod != Mods[cnsAddEdge] && currMod != Mods[cnsRenameNode])
                 currMod = Mods[Key.None];
             e.Handled = true;
@@ -285,7 +285,6 @@ namespace Kurs
                 DataContext = graph;
                 saved = true;
             }
-
         }
         void Save()
         {
